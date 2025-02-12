@@ -5,10 +5,5 @@ export default {
         target: 'esnext',
         outDir: '../dist',
         emptyOutDir: true,
-    },
-    server: {
-        port: 10000,
-        middlewareMode: true,
-        cors: true
     }
 }
