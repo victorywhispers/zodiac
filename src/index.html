@@ -74,6 +74,13 @@
                 </div>
 
                 <div class="sidebar-section">
+                    <h3>API Key</h3>
+                    <div class="btn-array">
+                        <input type="password" autocomplete="off" placeholder="Your API key" id="apiKeyInput" class="input-field"></input>
+                        <button id="btn-generate-key" class="btn-textual">
+                            Generate Key
+                        </button>
+                    </div>
                     <h3>Generation Settings</h3>
                     <label for="selectedModel">Model</label>
                     <select id="selectedModel" class="input-field">
@@ -95,7 +102,6 @@
                         <input type="range" min="20" max="200" id="temperature" class="slider">
                         <label id="label-temperature">0</label>
                     </div>
-                    <!-- Removing API Access section -->
                     <h3>Donate</h3>
                     <div class="btn-array">
                         <a href="https://patreon.com/faetalize" target="_blank" rel="noopener noreferrer"
