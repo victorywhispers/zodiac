@@ -1,4 +1,3 @@
-
 import * as personalityService from "./services/Personality.service";
 import * as settingsService from "./services/Settings.service";
 import * as overlayService from './services/Overlay.service';
@@ -71,6 +70,20 @@ importPersonalityButton.addEventListener("click", () => {
     });
     fileInput.click();
     fileInput.remove();
+});
+
+const generateKeyButton = document.querySelector("#btn-generate-key");
+generateKeyButton.addEventListener("click", async () => {
+    try {
+        const success = await settingsService.generateNewApiKey();
+        if (success) {
+            alert('New API key generated successfully!');
+        } else {
+            alert('Failed to generate API key. Please try again.');
+        }
+    } catch (error) {
+        alert('Error generating API key: ' + error.message);
+    }
 });
 
 window.addEventListener("resize", () => {
