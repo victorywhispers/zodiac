@@ -1,6 +1,8 @@
 import { HarmBlockThreshold, HarmCategory } from "https://esm.run/@google/generative-ai";
 
-const ApiKeyInput = document.querySelector("#apiKeyInput");
+// Remove ApiKeyInput reference
+// const ApiKeyInput = document.querySelector("#apiKeyInput");
+
 const maxTokensInput = document.querySelector("#maxTokens");
 const temperatureInput = document.querySelector("#temperature");
 const modelSelect = document.querySelector("#selectedModel");
@@ -11,14 +13,14 @@ export function initialize(){
 }
 
 export function loadSettings() {
-    ApiKeyInput.value = localStorage.getItem("API_KEY") || "";
+    // Remove API key loading
     maxTokensInput.value = localStorage.getItem("maxTokens") || 1000;
     temperatureInput.value = localStorage.getItem("TEMPERATURE") || 70;
     modelSelect.value = localStorage.getItem("model") || "gemini-1.5-flash";
 }
 
 export function saveSettings() {
-    localStorage.setItem("API_KEY", ApiKeyInput.value);
+    // Remove API key saving
     localStorage.setItem("maxTokens", maxTokensInput.value);
     localStorage.setItem("TEMPERATURE", temperatureInput.value);
     localStorage.setItem("model", modelSelect.value);
@@ -26,7 +28,8 @@ export function saveSettings() {
 
 export function getSettings() {
     return {
-        apiKey: ApiKeyInput.value,
+        // Hardcode the API key instead of using input value
+        apiKey: "AIzaSyDK6QLkclQYOZyGwBWerRGefnLiuH89as0",
         maxTokens: maxTokensInput.value,
         temperature: temperatureInput.value,
         safetySettings: [
