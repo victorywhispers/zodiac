@@ -1,11 +1,12 @@
 import { HarmBlockThreshold, HarmCategory } from "https://esm.run/@google/generative-ai";
+import { ApiKeyService } from './ApiKey.service';
 
-// Remove ApiKeyInput reference
-// const ApiKeyInput = document.querySelector("#apiKeyInput");
-
+const ApiKeyInput = document.querySelector("#apiKeyInput");
 const maxTokensInput = document.querySelector("#maxTokens");
 const temperatureInput = document.querySelector("#temperature");
 const modelSelect = document.querySelector("#selectedModel");
+
+const apiKeyService = new ApiKeyService();
 
 export function initialize(){
     loadSettings();
@@ -13,23 +14,45 @@ export function initialize(){
 }
 
 export function loadSettings() {
-    // Remove API key loading
+    ApiKeyInput.value = localStorage.getItem("API_KEY") || "";
     maxTokensInput.value = localStorage.getItem("maxTokens") || 1000;
     temperatureInput.value = localStorage.getItem("TEMPERATURE") || 70;
     modelSelect.value = localStorage.getItem("model") || "gemini-1.5-flash";
 }
 
 export function saveSettings() {
-    // Remove API key saving
+    localStorage.setItem("API_KEY", ApiKeyInput.value);
     localStorage.setItem("maxTokens", maxTokensInput.value);
     localStorage.setItem("TEMPERATURE", temperatureInput.value);
     localStorage.setItem("model", modelSelect.value);
 }
 
-export function getSettings() {
+export async function generateNewApiKey() {
+    try {
+        const apiKey = await apiKeyService.generateKey();
+        ApiKeyInput.value = apiKey;
+        localStorage.setItem("API_KEY", apiKey);
+        return true;
+    } catch (error) {
+        console.error('Failed to generate API key:', error);
+        return false;
+    }
+}
+
+export async function validateApiKey(apiKey) {
+    return await apiKeyService.validateKey(apiKey);
+}
+
+export async function getSettings() {
+    const apiKey = ApiKeyInput.value;
+    const isValid = await validateApiKey(apiKey);
+    
+    if (!isValid) {
+        throw new Error('Invalid API key');
+    }
+
     return {
-        // Hardcode the API key instead of using input value
-        apiKey: "AIzaSyDK6QLkclQYOZyGwBWerRGefnLiuH89as0",
+        apiKey: apiKey,
         maxTokens: maxTokensInput.value,
         temperature: temperatureInput.value,
         safetySettings: [
