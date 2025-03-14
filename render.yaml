@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: zodiac-web
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node server.js
+    envVars:
+      - key: REDIS_HOST
+        value: redis-18791.c264.ap-south-1-1.ec2.redns.redis-cloud.com
+      - key: REDIS_PORT
+        value: 18791
+
+  - type: web
+    name: zodiac-api
+    env: python
+    buildCommand: pip install -r api/requirements.txt
+    startCommand: gunicorn --chdir api server:app
