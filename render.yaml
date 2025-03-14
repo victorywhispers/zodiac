@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: zodiac-web
+    name: zodiac
     env: node
     buildCommand: npm install && npm run build
     startCommand: node server.js
@@ -9,6 +9,8 @@ services:
         value: redis-18791.c264.ap-south-1-1.ec2.redns.redis-cloud.com
       - key: REDIS_PORT
         value: 18791
+      - key: PORT
+        value: 10000
 
   - type: web
     name: zodiac-api
