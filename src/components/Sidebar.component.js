@@ -1,4 +1,5 @@
 import * as helpers from "../utils/helpers";
+import { KeyInput } from "./KeyInput.component.js";  // Add this import
 
 const hideSidebarButton = document.querySelector("#btn-hide-sidebar");
 const showSidebarButton = document.querySelector("#btn-show-sidebar");
@@ -39,3 +40,10 @@ for(const tab of tabs){
 }
 
 navigateTo(tabs[0]);
+
+// Initialize KeyInput and append to user section
+const userSection = document.querySelector('.sidebar-section:nth-child(4)');
+if (userSection) {
+    const keyInput = new KeyInput();
+    userSection.appendChild(keyInput.container);
+}

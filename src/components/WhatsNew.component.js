@@ -4,8 +4,8 @@ import { getVersion } from "../utils/helpers";
 const whatsNewButton = document.querySelector("#btn-whatsnew");
 
 //setup version number on badge and header
-whatsNewButton.querySelector("#badge-version").textContent = `v${getVersion()}`;
-document.querySelector('#header-version').textContent += `v${getVersion()}`;
+whatsNewButton.querySelector("#badge-version").textContent = `v1.0`;
+document.querySelector('#header-version').textContent += `v1.0`;
 
 whatsNewButton.addEventListener("click", () => {
     overlayService.showChangelog();

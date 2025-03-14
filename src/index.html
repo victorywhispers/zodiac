@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>zodiac, by faetalize</title>
-    <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/f/f0/Google_Bard_logo.svg"
-        type="image/x-icon">
+    <title>WormGPT, by Hecabrus</title>
+    <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/4/4a/Wormgpt.svg" type="image/x-icon">
     <link rel="stylesheet" href="./styles/main.css">
     <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github-dark.css">
+    <link rel="stylesheet" href="styles/error.css">
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VCHJXFGB08"></script>
@@ -29,12 +29,12 @@
         <div class="sidebar">
             <div class="header">
                 <button class="material-symbols-outlined btn-textual" id="btn-hide-sidebar">
-                    arrow_back_ios_new
+                    menu <!-- Changed from arrow_back_ios_new to menu -->
                 </button>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/f/f0/Google_Bard_logo.svg" id="gemin-pro-logo">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" id="gemin-pro-logo">
                 <div id="title-div">
-                    <div id="zodiac-branding">zodiac </div>
-                    <div id="gemini-pro-branding">powered by Gemini</div>
+                    <div id="wormgpt-branding" class="animated-text">WormGPT</div>
+                    <div id="powered-by">powered by Hecabrus</div>
                 </div>
                 <button class="badge" id="btn-whatsnew">
                     <span id="badge-version"></span>
@@ -42,88 +42,135 @@
             </div>
             <div class="navbar">
                 <div class="navbar-tab">Chats</div>
-                <div class="navbar-tab">Personalities</div>
+                <div class="navbar-tab">Models</div> <!-- Changed from Personalities -->
                 <div class="navbar-tab">Settings</div>
+                <div class="navbar-tab">User</div> <!-- New tab -->
+                <div class="navbar-tab">Tasks</div>
                 <div id="navbar-tab-highlight"></div>
             </div>
             <div id="sidebar-content">
                 <div class="sidebar-section">
                     <div class="btn-array">
                         <button id="btn-new-chat">
-                            <span class="material-symbols-outlined">add</span> <span>New Chat</span>
+                            <span class="material-symbols-outlined">add</span>
+                            <span>New Chat</span>
                         </button>
                         <button id="btn-reset-chat">
-                            <span class="material-symbols-outlined">clear_all</span>Clear All
+                            <span class="material-symbols-outlined">clear_all</span>
+                            Clear All
                         </button>
                     </div>
 
                     <input type="radio" name="currentChat" value="none" checked>
                     <div id="chatHistorySection">
-                        
                     </div>
                 </div>
 
                 <div class="sidebar-section" id="personalitySection">
-
                     <div id="personalitiesDiv"></div>
                     <div class="btn-array" id="btn-array-personality-section">
-                        <button id="btn-add-personality">Create</button>
-                        <button id="btn-import-personality">Import</button>
-                        <button id="btn-clearall-personality">Clear All</button>
+                        <!-- <button id="btn-import-personality">Import</button> -->
                     </div>
                 </div>
 
                 <div class="sidebar-section">
-                    <h3>API Key</h3>
-                    <div class="btn-array">
-                        <input type="password" autocomplete="off" placeholder="Your API key" id="apiKeyInput" class="input-field"></input>
-                        <button id="btn-generate-key" class="btn-textual">
-                            Generate Key
-                        </button>
-                    </div>
                     <h3>Generation Settings</h3>
-                    <label for="selectedModel">Model</label>
-                    <select id="selectedModel" class="input-field">
-                        <option value="gemini-1.5-flash">Flash 1.5</option>
-                        <option value="gemini-1.5-pro">Pro 1.5</option>
-                        <option value="gemini-2.0-flash" selected>Flash 2.0</option>
-                        <option value="gemini-2.0-pro-exp-02-05">Pro 2.0</option>
-                    </select>
-                    <label for="maxTokens">Max Output Tokens</label>
-                    <input type="number" id="maxTokens" class="input-field" min="1" max="4000" value="1000"></input>
-                    <label for="safetySettings">Safety Settings</label>
-                    <select id="safetySettings" class="input-field">
-                        <option value="safe">Safe</option>
-                        <option value="moderate">Moderate</option>
-                        <option value="risky">Risky</option>
-                    </select>
-                    <label for="temperature">Temperature</label>
-                    <div class="btn-array">
-                        <input type="range" min="20" max="200" id="temperature" class="slider">
-                        <label id="label-temperature">0</label>
+                    <div class="generation-settings">
+                        <div>
+                            <label class="setting-label" for="selectedModel"><span class="material-symbols-outlined">neurology</span>Model</label>
+                            <select id="selectedModel" class="input-field">
+                                <option value="gemini-2.0-flash" selected>Flash 2.0</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="setting-label" for="maxTokens"><span class="material-symbols-outlined">generating_tokens</span>Max Output Tokens</label>
+                            <input type="number" id="maxTokens" class="input-field" min="1" max="100000" value="100000" readonly></input>
+                        </div>
+                        <div>
+                            <label for="temperature">Temperature</label>
+                            <div class="btn-array">
+                                <input type="range" min="80" max="80" id="temperature" class="slider" value="80" readonly>
+                                <label id="label-temperature">0.8</label>
+                            </div>
+                        </div>
                     </div>
-                    <h3>Donate</h3>
+                    <h3>Support</h3> 
                     <div class="btn-array">
-                        <a href="https://patreon.com/faetalize" target="_blank" rel="noopener noreferrer"
-                            class="card card-patreon">
-                            <span class="patreon-logo">PATREON</span>
-                        </a>
-                        <a href="https://liberapay.com/faetalize" target="_blank" rel="noopener noreferrer"
-                            class="card card-liberapay">
-                            <span class="liberapay-logo">liberapay</span>
-                        </a>
-                        <a href="https://www.paypal.com/paypalme/alskdjaoiwdawwfq" target="_blank"
-                            rel="noopener noreferrer" class="card card-paypal">
-                            <span class="paypal-logo1">Pay</span><span class="paypal-logo2">Pal</span>
+                        <a href="https://t.me/hecabrus" target="_blank" rel="noopener noreferrer" 
+                            class="card card-telegram">
+                            <span class="telegram-logo">TELEGRAM</span>
                         </a>
                     </div>
                 </div>
+
+                <!-- Add new sidebar section for User -->
+                <div class="sidebar-section">
+                    <h3>Chat Limits</h3>
+                    <div class="user-stats">
+                        <div class="chat-limit-display">
+                            <span class="material-symbols-outlined">chat</span>
+                            <div class="limit-info">
+                                <div class="limit-count" id="remaining-chats-count"></div>
+                                <div class="limit-reset">Resets in 24h</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Move Bonus Account section above Available Tasks -->
+                <div class="sidebar-section" id="tasksSection">
+                    <!-- Bonus Account section first -->
+                    <h3>Bonus Account</h3>
+                    <div class="user-stats">
+                        <div class="bonus-display">
+                            <span class="material-symbols-outlined">stars</span>
+                            <div class="limit-info">
+                                <div id="bonus-messages-count">0 bonus messages</div>
+                                <div class="bonus-info">Never expires</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Available Tasks section second -->
+                    <h3 style="margin-top: 20px;">Available Tasks</h3>
+                    <div class="tasks-container">
+                        <div class="task-card" id="task1">
+                            <div class="task-header">
+                                <span class="material-symbols-outlined">task_alt</span>
+                                <h4>Task 1: Join & Earn 20 Bonus Messages</h4>
+                            </div>
+                            <div class="task-content">
+                                <p>1. Click the bot link below</p>
+                                <p>2. Join 2 required channels</p>
+                                <p>3. Click "Joined" in bot</p>
+                                <p>4. Wait 2 minutes for verification</p>
+                                <div class="task-reward">
+                                    <span class="material-symbols-outlined">chat</span>
+                                    20 Bonus Messages
+                                </div>
+                                <div class="task-actions">
+                                    <a href="https://t.me/Get_Chatgpt2Bot?start=7903500450" 
+                                       target="_blank" 
+                                       class="task-button" 
+                                       id="task1-button"
+                                       onclick="return false;">
+                                        Start Task
+                                    </a>
+                                    <div class="task-timer hidden">
+                                        <span class="material-symbols-outlined">schedule</span>
+                                        Verifying: <span id="task1-timer">120</span>s
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
 
             <div class="credits">
-                Made by fætalize
-                <a href="https://github.com/faetalize/zodiac">Source Code</a>
+                Made by Hecabrus
             </div>
         </div>
 
@@ -133,7 +180,9 @@
                     menu
                 </button>
             </div>
-            <div class="message-container"></div>
+            <div class="message-container">
+                <!-- Rest of your messages -->
+            </div>
             <div id="message-box">
                 <span contenteditable placeholder="Send a message" id="messageInput" class="input-field"></span>
                 <button type="submit" class="btn-textual material-symbols-outlined" id="btn-send">send</button>
@@ -187,14 +236,18 @@
                             <!-- internet access toggle -->
                             <div style="display: flex; gap: 0.25rem; align-items: center;">
                                 <input id="internet-access" type="checkbox" name="internetEnabled"></input>
-                                <label for="internet-access">Internet Access</label> 
-                                <span class="material-symbols-outlined" style="font-size: 0.885rem; opacity: 0.6; cursor:default" title="Enhance the model's responses with online search queries. Useful for fact checking and grounding. Currently still in development.">info</span>
+                                <label for="internet-access">Internet Access</label>
+                                <span class="material-symbols-outlined"
+                                    style="font-size: 0.885rem; opacity: 0.6; cursor:default"
+                                    title="Enhance the model's responses with online search queries. Useful for fact checking and grounding. Currently still in development.">info</span>
                             </div>
                             <!-- roleplay toggle -->
                             <div style="display: flex; gap: 0.25rem; align-items: center;">
                                 <input id="roleplay" type="checkbox" name="roleplayEnabled"></input>
                                 <label for="roleplay">Roleplay</label>
-                                <span class="material-symbols-outlined" style="font-size: 0.885rem; opacity: 0.6; cursor:default" title="This attribute enhances your roleplay experience by enabling a new game-ified interface. Currently still in development.">info</span>
+                                <span class="material-symbols-outlined"
+                                    style="font-size: 0.885rem; opacity: 0.6; cursor:default"
+                                    title="This attribute enhances your roleplay experience by enabling a new game-ified interface. Currently still in development.">info</span>
                             </div>
                         </div>
                         <div class="step">
@@ -221,10 +274,8 @@
             <div id="whats-new">
                 <h1 id="header-version">What's New in </h1>
                 <ul id="changelog">
-                    <li>NEW: Added 2.0 models, now available in Pro and Flash variants</li>
                     <li>Stability improvements</li>
-                    <li>Visit my discord if you'd like to connect regarding  the project, need support, or have any questions: <a href="https://discord.gg/ZbdPu4Dm3e">Discord Server</a></li>
-
+                    <li>Join my telegram channel for any doubt or any bugs: <a href="https://t.me/hecabrus" target="_blank">Telegram Channel</a></li>
                 </ul>
             </div>
         </div>

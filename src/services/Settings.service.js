@@ -1,76 +1,48 @@
 import { HarmBlockThreshold, HarmCategory } from "https://esm.run/@google/generative-ai";
-import { ApiKeyService } from './ApiKey.service';
 
-const ApiKeyInput = document.querySelector("#apiKeyInput");
+// Remove API key input reference
 const maxTokensInput = document.querySelector("#maxTokens");
 const temperatureInput = document.querySelector("#temperature");
 const modelSelect = document.querySelector("#selectedModel");
 
-const apiKeyService = new ApiKeyService();
-
-export function initialize(){
+export function initialize() {
     loadSettings();
     temperatureLabelSetup();
 }
 
 export function loadSettings() {
-    ApiKeyInput.value = localStorage.getItem("API_KEY") || "";
-    maxTokensInput.value = localStorage.getItem("maxTokens") || 1000;
-    temperatureInput.value = localStorage.getItem("TEMPERATURE") || 70;
-    modelSelect.value = localStorage.getItem("model") || "gemini-1.5-flash";
+    // Remove API key loading
+    maxTokensInput.value = 100000; // Hardcoded to 100000
+    temperatureInput.value = 80; // Hardcoded to 0.8 (80/100)
+    modelSelect.value = localStorage.getItem("model") || "gemini-2.0-flash";
 }
 
 export function saveSettings() {
-    localStorage.setItem("API_KEY", ApiKeyInput.value);
-    localStorage.setItem("maxTokens", maxTokensInput.value);
-    localStorage.setItem("TEMPERATURE", temperatureInput.value);
+    // Remove API key saving
     localStorage.setItem("model", modelSelect.value);
+    // Remove storage of maxTokens and temperature since they're hardcoded
 }
 
-export async function generateNewApiKey() {
-    try {
-        const apiKey = await apiKeyService.generateKey();
-        ApiKeyInput.value = apiKey;
-        localStorage.setItem("API_KEY", apiKey);
-        return true;
-    } catch (error) {
-        console.error('Failed to generate API key:', error);
-        return false;
-    }
-}
-
-export async function validateApiKey(apiKey) {
-    return await apiKeyService.validateKey(apiKey);
-}
-
-export async function getSettings() {
-    const apiKey = ApiKeyInput.value;
-    const isValid = await validateApiKey(apiKey);
-    
-    if (!isValid) {
-        throw new Error('Invalid API key');
-    }
-
+export function getSettings() {
     return {
-        apiKey: apiKey,
         maxTokens: maxTokensInput.value,
         temperature: temperatureInput.value,
         safetySettings: [
             {
                 category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
+                threshold: HarmBlockThreshold.BLOCK_NONE
             },
             {
                 category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
+                threshold: HarmBlockThreshold.BLOCK_NONE
             },
             {
                 category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
+                threshold: HarmBlockThreshold.BLOCK_NONE
             },
             {
                 category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold: HarmBlockThreshold.BLOCK_NONE,
+                threshold: HarmBlockThreshold.BLOCK_NONE
             }
         ],
         model: modelSelect.value
