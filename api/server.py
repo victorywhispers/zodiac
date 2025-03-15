@@ -5,7 +5,13 @@ import datetime
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": os.getenv('CORS_ORIGINS', '*').split(','),
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Load user data
 USER_DATA_FILE = "../user_data.json"
