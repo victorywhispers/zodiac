@@ -1,11 +1,22 @@
 services:
+  # Frontend static site
   - type: web
-    name: wormgpt
+    name: wormgpt-frontend
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
-      - key: PORT
-        value: 10000
       - key: NODE_VERSION
         value: 18
+      - key: VITE_API_URL
+        value: https://wormgpt-api.onrender.com
+
+  # Backend Python API
+  - type: web
+    name: wormgpt-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python api/server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
