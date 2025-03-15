@@ -16,23 +16,27 @@ for (const path in components) {
 
 // Initialize services and check key validation first
 async function initialize() {
-    // Check key validation before loading anything else
-    if (!keyValidationService.isKeyValid()) {
-        const verificationPage = new VerificationPage();
-        document.body.appendChild(verificationPage.container);
-        return;
+    try {
+        // Check key validation before loading anything else
+        if (!keyValidationService.isKeyValid()) {
+            const verificationPage = new VerificationPage();
+            document.body.appendChild(verificationPage.container);
+            return;
+        }
+
+        // Only load these if key is valid
+        await settingsService.loadSettings();
+        await chatsService.initialize(db);
+        await personalityService.initialize();
+
+        initializeErrorHandling();
+        initializeNetworkHandling();
+        initializeEventListeners();
+
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showErrorToast('Error initializing application');
     }
-
-    // Only load these if key is valid
-    await settingsService.loadSettings();
-    await chatsService.initialize(db);
-    await personalityService.initialize();
-
-    initializeErrorHandling();
-    initializeNetworkHandling();
-
-    // Initialize event listeners
-    initializeEventListeners();
 }
 
 function initializeErrorHandling() {
