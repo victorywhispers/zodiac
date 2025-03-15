@@ -10,7 +10,7 @@ services:
         value: 10000
       - key: VITE_SUPABASE_URL
         value: https://ybmwyhyylqhkfgtspllm.supabase.co
-      - key: VITE_SUPABASE_ANON_KEY
+      - key: VITE_SUPABASE_ANON_KEY  # This is what frontend needs
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlibXd5aHl5bHFoa2ZndHNwbGxtIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTkxNDUxMjEsImV4cCI6MjAxNDcyMTEyMX0.eSn7WTAuqS5jyb0W4_XmqJRGCx3TYrOh_kAURrXLt4M
       - key: VITE_WEAVIATE_URL 
         value: j42olyzjqywa9imvy9c5ja.c0.asia-southeast1.gcp.weaviate.cloud
