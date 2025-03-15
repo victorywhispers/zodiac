@@ -4,7 +4,7 @@ export const DATABASE_CONFIG = {
         apiKey: import.meta.env.VITE_WEAVIATE_API_KEY
     },
     SUPABASE: {
-        url: import.meta.env.VITE_SUPABASE_URL || '',
-        apiKey: import.meta.env.VITE_SUPABASE_API_KEY || ''
+        url: import.meta.env.VITE_SUPABASE_URL,
+        apiKey: import.meta.env.VITE_SUPABASE_API_KEY
     }
 };
