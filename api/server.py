@@ -1,148 +1,146 @@
-import { chatLimitService } from './ChatLimitService.js';
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import json
+import datetime
+import os
+import string
+import random
+from pathlib import Path
 
-export class KeyValidationService {
-    constructor() {
-        // Set default API URL with fallback
-        this.API_URL = import.meta.env.VITE_API_URL || 'https://wormgpt-api.onrender.com';
-        this.KEY_STORAGE = 'wormgpt_access_key';
-        this.EXPIRY_STORAGE = 'wormgpt_key_expiry';
-        this.USER_ID_STORAGE = 'wormgpt_user_id';
-    }
+app = Flask(__name__)
+CORS(app)
 
-    validateKeyFormat(key) {
-        if (!key) return false;
+# Update path to be relative to the script location
+BASE_DIR = Path(__file__).parent.parent
+USER_DATA_FILE = BASE_DIR / "user_data.json"
+
+def load_user_data():
+    if USER_DATA_FILE.exists():
+        with open(USER_DATA_FILE, 'r') as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
+
+def generate_key():
+    return "WR-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+
+def get_expiry_time(days=1):
+    return (datetime.datetime.now() + datetime.timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
+
+# Add root route
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({
+        'status': 'running',
+        'version': '1.0.0',
+        'endpoints': [
+            '/health',
+            '/api/validate-key',
+            '/api/generate-key'
+        ]
+    })
+
+@app.route('/api/validate-key', methods=['POST'])
+def validate_key():
+    try:
+        data = request.json
+        key = data.get('key')
+        if not key:
+            return jsonify({
+                'valid': False,
+                'message': 'No key provided'
+            }), 400
+
+        user_data = load_user_data()
+
+        # Check if key exists in any user's data
+        for user_info in user_data.values():
+            if user_info.get('key') == key:
+                try:
+                    expiry_time = datetime.datetime.strptime(
+                        user_info['expiry_time'], 
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                    
+                    if datetime.datetime.now() < expiry_time:
+                        return jsonify({
+                            'valid': True,
+                            'message': 'Key validated successfully',
+                            'expiryTime': user_info['expiry_time']
+                        })
+                except Exception as e:
+                    print(f"Error processing key validation: {e}")
+                    return jsonify({
+                        'valid': False,
+                        'message': 'Error processing key'
+                    }), 500
+
+        return jsonify({
+            'valid': False,
+            'message': 'Invalid or expired key'
+        })
+
+    except Exception as e:
+        print(f"Server error: {e}")
+        return jsonify({
+            'valid': False,
+            'message': f'Server error occurred: {str(e)}'
+        }), 500
+
+@app.route('/api/generate-key', methods=['POST'])
+def generate_trial_key():
+    try:
+        data = request.json
+        user_id = data.get('userId')
         
-        // Convert to uppercase for consistent validation
-        key = key.toUpperCase();
+        if not user_id:
+            return jsonify({
+                'success': False,
+                'message': 'User ID required'
+            }), 400
+
+        user_data = load_user_data()
         
-        // Accept WR-TEST12345 and regular keys (WR-XXXXXXXXXX)
-        return key === "WR-TEST12345" || /^WR-[A-Z0-9]{10}$/.test(key);
-    }
-
-    async validateKey(key) {
-        try {
-            if (!this.validateKeyFormat(key)) {
-                return { 
-                    valid: false, 
-                    message: 'Invalid key format. Key should start with WR- followed by 10 characters' 
-                };
+        # Initialize user if not exists
+        if str(user_id) not in user_data:
+            user_data[str(user_id)] = {
+                "verified": True,
+                "total_keys_generated": 0
             }
 
-            const response = await fetch(`${this.API_URL}/api/validate-key`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ key: key.toUpperCase() })
-            });
+        # Generate new key
+        key = generate_key()
+        expiry_time = get_expiry_time()
+        
+        user_data[str(user_id)].update({
+            "key": key,
+            "expiry_time": expiry_time,
+            "total_keys_generated": user_data[str(user_id)].get("total_keys_generated", 0) + 1
+        })
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        # Save to file
+        with open(USER_DATA_FILE, 'w') as f:
+            json.dump(user_data, f)
 
-            const data = await response.json();
-            
-            if (data.valid) {
-                // Store key data
-                localStorage.setItem(this.KEY_STORAGE, JSON.stringify({
-                    key: key.toUpperCase(),
-                    expiryTime: data.expiryTime,
-                    activatedAt: new Date().toISOString()
-                }));
-                return {
-                    valid: true,
-                    message: data.message,
-                    expiryTime: data.expiryTime
-                };
-            }
-            
-            return data;
-        } catch (error) {
-            console.error('Key validation error:', error);
-            return { 
-                valid: false, 
-                message: 'Error connecting to validation server. Please try again.' 
-            };
-        }
-    }
+        return jsonify({
+            'success': True,
+            'key': key,
+            'expiryTime': expiry_time
+        })
 
-    async generateTrialKey() {
-        try {
-            let userId = localStorage.getItem(this.USER_ID_STORAGE);
-            if (!userId) {
-                userId = 'web_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem(this.USER_ID_STORAGE, userId);
-            }
+    except Exception as e:
+        print(f"Error generating key: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error generating key'
+        }), 500
 
-            const response = await fetch(`${this.API_URL}/api/generate-key`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userId })
-            });
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({'status': 'alive'})
 
-            if (!response.ok) {
-                throw new Error('Failed to generate key');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                localStorage.setItem(this.KEY_STORAGE, JSON.stringify({
-                    key: data.key,
-                    expiryTime: data.expiryTime,
-                    activatedAt: new Date().toISOString()
-                }));
-                return {
-                    success: true,
-                    key: data.key,
-                    expiryTime: data.expiryTime
-                };
-            }
-            return {
-                success: false,
-                message: data.message || 'Failed to generate key'
-            };
-        } catch (error) {
-            console.error('Error generating key:', error);
-            return {
-                success: false,
-                message: 'Error connecting to server'
-            };
-        }
-    }
-
-    isKeyValid() {
-        const key = localStorage.getItem(this.KEY_STORAGE);
-        const expiry = localStorage.getItem(this.EXPIRY_STORAGE);
-
-        if (!key || !expiry) return false;
-
-        const expiryDate = new Date(expiry);
-        return expiryDate > new Date();
-    }
-
-    getKeyData() {
-        try {
-            return JSON.parse(localStorage.getItem(this.KEY_STORAGE));
-        } catch {
-            return null;
-        }
-    }
-
-    getRemainingTime() {
-        const keyData = this.getKeyData();
-        if (!keyData) return null;
-
-        const now = new Date();
-        const expiryTime = new Date(keyData.expiryTime);
-        const diff = expiryTime - now;
-
-        return {
-            hours: Math.max(0, Math.floor(diff / (1000 * 60 * 60))),
-            minutes: Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)))
-        };
-    }
-}
-
-export const keyValidationService = new KeyValidationService();
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
