@@ -21,18 +21,14 @@ services:
         value: 3.9.0
       - key: FLASK_ENV
         value: production
-      - key: CORS_ORIGINS
-        value: https://wormgpt-frontend.onrender.com
-    healthCheckPath: /health
-    healthCheckTimeout: 60
 
-  # Telegram Bot Service
+  # Telegram Bot Service (New)
   - type: web
     name: wormgpt-keygen
     env: python
     buildCommand: |
       python -m pip install --upgrade pip
-      pip install python-telegram-bot==20.3
+      pip install -r keygen_requirements.txt
     startCommand: python KEYGEN.PY
     envVars:
       - key: PYTHON_VERSION
