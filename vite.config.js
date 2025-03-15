@@ -5,6 +5,7 @@ export default defineConfig({
     build: {
         outDir: '../dist',
         emptyOutDir: true,
+        target: 'esnext',  // Add this to support top-level await
     },
     preview: {
         port: process.env.PORT || 3000,
