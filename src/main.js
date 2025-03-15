@@ -5,12 +5,8 @@ import * as helpers from "./utils/helpers";
 import { tasksService } from './services/Tasks.service.js';
 import { VerificationPage } from './components/VerificationPage.component.js';
 import { keyValidationService } from './services/KeyValidationService.js';
-import { db, setupDB } from './services/Db.service.js';
+import { db } from './services/Db.service.js';
 import * as chatsService from './services/Chats.service.js';
-import { userService } from './services/User.service.js';
-import { migrationService } from './services/database/MigrationService';
-import { settingsService as dbSettingsService } from './services/database/SettingsService';
-import { ErrorService } from './services/Error.service.js';
 
 //load all component code
 const components = import.meta.glob('./components/*.js');
@@ -18,73 +14,143 @@ for (const path in components) {
     components[path]();
 }
 
-// Add network status check with auto-refresh
-window.addEventListener('online', () => {
-    ErrorService.handleNetworkRestore();
-});
-
-window.addEventListener('offline', () => {
-    ErrorService.handleNetworkError();
-});
-
-// Initialize services and check network first
+// Initialize services and check key validation first
 async function initialize() {
-    try {
-        if (!navigator.onLine) {
-            ErrorService.handleNetworkError();
-            return;
-        }
-
-        // Initialize database first
-        try {
-            await setupDB();
-        } catch (error) {
-            ErrorService.handleDatabaseError();
-            return;
-        }
-        
-        // Initialize user
-        try {
-            const userId = await userService.initializeUser();
-        } catch (error) {
-            ErrorService.showError('Failed to initialize user. Please refresh.', 'error');
-            return;
-        }
-        
-        // Verify key in database
-        try {
-            const isKeyValid = await keyValidationService.isKeyValid();
-            if (!isKeyValid) {
-                const verificationPage = new VerificationPage();
-                document.body.appendChild(verificationPage.container);
-                return;
-            }
-        } catch (error) {
-            ErrorService.showError('Key validation failed. Please try again.', 'error');
-            return;
-        }
-
-        // Load settings
-        try {
-            await settingsService.loadSettings();
-        } catch (error) {
-            ErrorService.showError('Failed to load settings. Using defaults.', 'warning');
-        }
-        
-        // Initialize services
-        try {
-            await chatsService.initialize();
-            await personalityService.initialize();
-            initializeEventListeners();
-        } catch (error) {
-            ErrorService.showError('Failed to initialize services. Please refresh.', 'error');
-        }
-    } catch (error) {
-        console.error('Initialization failed:', error);
-        ErrorService.showError('Application failed to start. Please refresh.', 'error');
+    // Check key validation before loading anything else
+    if (!keyValidationService.isKeyValid()) {
         const verificationPage = new VerificationPage();
         document.body.appendChild(verificationPage.container);
+        return;
     }
+
+    // Only load these if key is valid
+    await settingsService.loadSettings();
+    await chatsService.initialize(db);
+    await personalityService.initialize();
+
+    initializeErrorHandling();
+    initializeNetworkHandling();
+
+    // Initialize event listeners
+    initializeEventListeners();
+}
+
+function initializeErrorHandling() {
+    // Global error handler
+    window.addEventListener('error', (event) => {
+        showErrorToast('An error occurred: ' + event.error.message);
+        event.preventDefault();
+    });
+
+    window.addEventListener('unhandledrejection', (event) => {
+        showErrorToast('An error occurred: ' + event.reason);
+    });
+}
+
+function initializeNetworkHandling() {
+    let isReconnecting = false;
+    let connectionStatus = document.createElement('div');
+    connectionStatus.className = 'connection-status';
+    document.body.appendChild(connectionStatus);
+
+    function updateConnectionStatus(online) {
+        connectionStatus.className = `connection-status ${online ? 'online' : 'offline'}`;
+        connectionStatus.innerHTML = online ? 
+            '🌐 Connected' : 
+            '📡 Offline - Reconnecting...';
+    }
+
+    // Check connection on load
+    updateConnectionStatus(navigator.onLine);
+
+    // Online event handler
+    window.addEventListener('online', async () => {
+        updateConnectionStatus(true);
+        showSuccessToast('Connection restored! Refreshing...');
+        
+        // Wait 2 seconds before refreshing to show the toast
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+    });
+
+    // Offline event handler
+    window.addEventListener('offline', () => {
+        updateConnectionStatus(false);
+        showErrorToast('No internet connection. Please check your connection.');
+    });
+
+    // Periodic connection check
+    setInterval(async () => {
+        try {
+            const response = await fetch('/ping', { 
+                method: 'HEAD',
+                cache: 'no-cache'
+            });
+            
+            if (!response.ok) {
+                throw new Error('Connection test failed');
+            }
+            
+            if (isReconnecting) {
+                isReconnecting = false;
+                updateConnectionStatus(true);
+                showSuccessToast('Connection restored!');
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        } catch (error) {
+            if (!isReconnecting) {
+                isReconnecting = true;
+                updateConnectionStatus(false);
+                showErrorToast('Connection lost. Attempting to reconnect...');
+            }
+        }
+    }, 30000); // Check every 30 seconds
+}
+
+function showErrorToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast error';
+    toast.innerHTML = `
+        <span class="material-symbols-outlined">error</span>
+        <span>${message}</span>
+    `;
+    showToast(toast);
+}
+
+function showSuccessToast(message) {
+    const toast = document.createElement('div');
+    toast.className = 'toast success';
+    toast.innerHTML = `
+        <span class="material-symbols-outlined">check_circle</span>
+        <span>${message}</span>
+    `;
+    showToast(toast);
+}
+
+function showToast(toast) {
+    const container = document.querySelector('.toast-container') || createToastContainer();
+    
+    // Remove existing toasts of the same type
+    const existingToasts = container.querySelectorAll(`.${toast.classList[1]}`);
+    existingToasts.forEach(existingToast => {
+        existingToast.remove();
+    });
+    
+    container.appendChild(toast);
+    
+    // Force a reflow before adding the fade-out class
+    setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+    return container;
 }
 
 function initializeEventListeners() {
@@ -92,16 +158,21 @@ function initializeEventListeners() {
     chatsService.initializeChatButtons();
     
     const hideOverlayButton = document.querySelector("#btn-hide-overlay");
+    const addPersonalityButton = document.querySelector("#btn-add-personality");
+    const newChatButton = document.querySelector("#btn-new-chat");
+    const deleteAllChatsButton = document.querySelector("#btn-reset-chat");
+    const clearAllButton = document.querySelector("#btn-clearall-personality");
+    const importPersonalityButton = document.querySelector("#btn-import-personality");
+
+    // Add event listeners only if elements exist
     if (hideOverlayButton) {
         hideOverlayButton.addEventListener("click", () => overlayService.closeOverlay());
     }
 
-    const addPersonalityButton = document.querySelector("#btn-add-personality");
     if (addPersonalityButton) {
         addPersonalityButton.addEventListener("click", () => overlayService.showAddPersonalityForm());
     }
 
-    const newChatButton = document.querySelector("#btn-new-chat");
     if (newChatButton) {
         newChatButton.addEventListener("click", () => {
             if (!chatsService.getCurrentChatId()) {
@@ -111,21 +182,18 @@ function initializeEventListeners() {
         });
     }
 
-    const deleteAllChatsButton = document.querySelector("#btn-reset-chat");
     if (deleteAllChatsButton) {
         deleteAllChatsButton.addEventListener("click", () => {
             chatsService.deleteAllChats();
         });
     }
 
-    const clearAllButton = document.querySelector("#btn-clearall-personality");
     if (clearAllButton) {
         clearAllButton.addEventListener("click", () => {
             personalityService.removeAll();
         });
     }
 
-    const importPersonalityButton = document.querySelector("#btn-import-personality");
     if (importPersonalityButton) {
         importPersonalityButton.addEventListener("click", () => {
             const fileInput = document.createElement('input');
@@ -176,8 +244,8 @@ function initializeEventListeners() {
                 
                 if (timeLeft <= 0) {
                     clearInterval(timer);
-                    // Fix: Change taskService to tasksService
-                    tasksService.completeTask('task1');
+                    // Complete task and add bonus messages
+                    taskService.completeTask('task1');
                     
                     // Show success message
                     const taskContent = document.querySelector('#task1 .task-content');
@@ -223,20 +291,5 @@ function initializeEventListeners() {
 
 // Start initialization
 initialize();
-
-async function initializeApp() {
-    try {
-        // Perform one-time migration
-        await migrationService.migrateUserSettings();
-        
-        // From now on, use settingsService for all settings operations
-        const settings = await dbSettingsService.getSettings();
-        // Use settings in your app...
-    } catch (error) {
-        console.error('Initialization failed:', error);
-    }
-}
-
-initializeApp();
 
 

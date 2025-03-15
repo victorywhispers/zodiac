@@ -6,160 +6,123 @@ import * as settingsService from "./Settings.service.js";
 import * as personalityService from "./Personality.service.js";
 import * as chatsService from "./Chats.service.js";
 import * as helpers from "../utils/helpers.js";
-import { supabaseService } from './database/SupabaseService';
-import { redisService } from './database/RedisService';
-import { userService } from './User.service.js';
-import { weaviateService } from './database/WeaviateService';
-import { chatLimitService } from './database/ChatLimitService.js';
 
-async function generateEmbedding(text) {
-    try {
-        const model = new GoogleGenerativeAI(settingsService.getSettings().apiKey)
-            .getGenerativeModel({ model: "embedding-001" });
-        
-        const result = await model.embedContent(text);
-        // Ensure we get the values array
-        const embedding = result.embedding.values;
-        
-        if (!embedding || !Array.isArray(embedding)) {
-            console.error('Invalid embedding generated:', embedding);
-            return null;
-        }
-        
-        // Ensure all values are numbers
-        if (!embedding.every(val => typeof val === 'number')) {
-            console.error('Invalid embedding values:', embedding);
-            return null;
-        }
-        
-        return embedding;
-    } catch (error) {
-        console.error('Error generating embedding:', error);
-        return null;
-    }
+// Add error toast function
+function showErrorToast(message, isWarning = false) {
+    const toast = document.createElement('div');
+    toast.className = `error-toast ${isWarning ? 'warning' : ''}`;
+    toast.innerHTML = `
+        <span class="material-symbols-outlined">${isWarning ? 'warning' : 'error'}</span>
+        <span>${message}</span>
+    `;
+    document.body.appendChild(toast);
+    
+    // Show animation
+    setTimeout(() => toast.classList.add('show'), 100);
+    
+    // Auto hide after 5 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
 }
 
+// Modify send function with better error handling
 export async function send(msg, db) {
     try {
-        const { isDailyLimitReached, isMonthlyLimitReached } = await chatLimitService.isLimitReached();
-        
-        if (isDailyLimitReached) {
-            throw new Error('Daily chat limit reached');
-        }
-        if (isMonthlyLimitReached) {
-            throw new Error('Monthly chat limit reached');
-        }
-
-        await chatLimitService.incrementCount();
-        await chatLimitService.updateDisplay();
-
-        // Store in Supabase
-        const userId = userService.getCurrentUserId();
-        const stored = await supabaseService.storeChat({
-            message: msg,
-            timestamp: Date.now(),
-            user_id: userId,
-            metadata: { source: 'chat' }
-        });
-
-        if (!stored) {
-            console.warn('Failed to store message in Supabase');
-            // Continue with local storage even if remote storage fails
-        }
-
-        // Generate embedding and store in Weaviate
-        const embedding = await generateEmbedding(msg);
-        if (embedding) {
-            await weaviateService.storeMessage(msg, embedding);
-        }
-
-        // Continue with your existing code...
         const selectedPersonality = await personalityService.getSelected();
         if (!selectedPersonality) {
+            showErrorToast('No personality selected');
             return;
         }
+
+        if (!navigator.onLine) {
+            showErrorToast('No internet connection. Please check your connection and try again.', true);
+            return;
+        }
+
         const settings = settingsService.getSettings();
         if (settings.apiKey === "") {
-            alert("Please enter an API key");
+            showErrorToast('Please enter an API key');
             return;
         }
+
         if (!msg) {
             return;
         }
 
         try {
-            //model setup
             const generativeModel = new GoogleGenerativeAI(settings.apiKey).getGenerativeModel({
                 model: settings.model,
                 systemInstruction: settingsService.getSystemPrompt()
             });
 
-            //user msg handling
+            // Handle chat creation
             if (!await chatsService.getCurrentChat(db)) {
-                const result = await generativeModel.generateContent('Please generate a short title for the following request from a user, only reply with the short title, nothing else: ' + msg);
-                const title = result.response.text()
-                const id = await chatsService.addChat(title, null, db);
-                document.querySelector(`#chat${id}`).click();
+                try {
+                    const result = await generativeModel.generateContent('Please generate a short title for the following request from a user, only reply with the short title, nothing else: ' + msg);
+                    const title = result.response.text()
+                    const id = await chatsService.addChat(title, null, db);
+                    document.querySelector(`#chat${id}`).click();
+                } catch (error) {
+                    showErrorToast('Failed to create new chat. Please try again.');
+                    return;
+                }
             }
 
             await insertMessage("user", msg);
 
-            const chat = generativeModel.startChat({
-                generationConfig: {
-                    maxOutputTokens: settings.maxTokens,
-                    temperature: settings.temperature / 100
-                },
-                safetySettings: settings.safetySettings,
-                history: [
-                    {
-                        role: "user",
-                        parts: [{ text: `Personality Name: ${selectedPersonality.name}, Personality Description: ${selectedPersonality.description}, Personality Prompt: ${selectedPersonality.prompt}. Your level of aggression is ${selectedPersonality.aggressiveness} out of 3. Your sensuality is ${selectedPersonality.sensuality} out of 3.` }]
-                    },
-                    {
-                        role: "model",
-                        parts: [{ text: "okie dokie. from now on, I will be acting as the personality you have chosen" }]
-                    },
-                    ...(selectedPersonality.toneExamples ? selectedPersonality.toneExamples.map((tone) => {
-                        return { role: "model", parts: [{ text: tone }] }
-                    }) : []),
-                    ...(await chatsService.getCurrentChat(db)).content.map((msg) => {
-                        return { role: msg.role, parts: msg.parts }
-                    })
-                ]
-            });
+            // Handle message stream with retry
+            let retries = 3;
+            while (retries > 0) {
+                try {
+                    const chat = generativeModel.startChat({
+                        generationConfig: {
+                            maxOutputTokens: settings.maxTokens,
+                            temperature: settings.temperature / 100
+                        },
+                        safetySettings: settings.safetySettings,
+                        history: [
+                            {
+                                role: "user",
+                                parts: [{ text: `Personality Name: ${selectedPersonality.name}, Personality Description: ${selectedPersonality.description}, Personality Prompt: ${selectedPersonality.prompt}. Your level of aggression is ${selectedPersonality.aggressiveness} out of 3. Your sensuality is ${selectedPersonality.sensuality} out of 3.` }]
+                            },
+                            {
+                                role: "model",
+                                parts: [{ text: "okie dokie. from now on, I will be acting as the personality you have chosen" }]
+                            },
+                            ...(selectedPersonality.toneExamples ? selectedPersonality.toneExamples.map((tone) => {
+                                return { role: "model", parts: [{ text: tone }] }
+                            }) : []),
+                            ...(await chatsService.getCurrentChat(db)).content.map((msg) => {
+                                return { role: msg.role, parts: msg.parts }
+                            })
+                        ]
+                    });
 
-            // Generate stream response
-            const stream = await chat.sendMessageStream(msg);
-
-            // Create message container for model response
-            const messageElement = await insertMessage("model", "", selectedPersonality.name, stream, db);
-
-            // Get the response text from the message element
-            const messageText = messageElement.querySelector('.message-text');
-
-            // Save chat history
-            const currentChat = await chatsService.getCurrentChat(db);
-            currentChat.content.push(
-                { role: "user", parts: [{ text: msg }] },
-                { role: "model", personality: selectedPersonality.name, parts: [{ text: messageText.textContent }] }
-            );
-            await db.chats.put(currentChat);
-
-            // Add refresh button functionality
-            const refreshBtn = messageElement.querySelector('.btn-refresh');
-            if (refreshBtn) {
-                refreshBtn.onclick = async () => {
-                    await regenerate(messageElement, db);
-                };
+                    const stream = await chat.sendMessageStream(msg);
+                    const messageElement = await insertMessage("model", "", selectedPersonality.name, stream, db);
+                    
+                    // Success - break the retry loop
+                    break;
+                } catch (error) {
+                    retries--;
+                    if (retries === 0) {
+                        throw error;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+                }
             }
 
         } catch (error) {
-            console.error('Error sending message:', error);
-            await insertMessage("model", "Sorry, there was an error processing your request. Please try again.", selectedPersonality?.name);
+            console.error('API Error:', error);
+            showErrorToast('Failed to get response from AI. Please try again.');
+            throw error;
         }
+
     } catch (error) {
         console.error('Error sending message:', error);
-        throw error;
+        await insertMessage("model", "Sorry, there was an error processing your request. Please try again.", selectedPersonality?.name);
     }
 }
 

@@ -1,7 +1,7 @@
 import * as messageService from '../services/Message.service';
 import * as dbService from '../services/Db.service';
 import * as helpers from '../utils/helpers';
-import { chatLimitService } from '../services/database/ChatLimitService.js';
+import { chatLimitService } from '../services/ChatLimitService.js';
 import { keyValidationService } from '../services/KeyValidationService.js';
 
 const messageInput = document.querySelector("#messageInput");
@@ -13,23 +13,10 @@ export class ChatInput {
         this.messageInput = document.querySelector("#messageInput");
         this.sendButton = document.querySelector("#btn-send");
         this.remainingChatsElement = document.querySelector("#remaining-chats-count");
-        
-        // Initialize the component
-        this.initialize();
-    }
-
-    async initialize() {
-        try {
-            // Initialize chat limits asynchronously
-            this.remainingChats = await chatLimitService.initializeChatLimit();
-            this.updateRemainingChatsDisplay();
-            this.checkKeyValidity();
-            this.init();
-        } catch (error) {
-            console.error('Failed to initialize chat input:', error);
-            this.remainingChats = 0;
-            this.updateRemainingChatsDisplay();
-        }
+        this.remainingChats = chatLimitService.initializeChatLimit();
+        this.updateRemainingChatsDisplay();
+        this.checkKeyValidity();
+        this.init();
     }
 
     checkKeyValidity() {
@@ -51,33 +38,42 @@ export class ChatInput {
     }
 
     async handleSubmit() {
+        const sendButton = document.querySelector("#btn-send");
+        
+        if (sendButton.classList.contains('processing')) {
+            return; // Prevent multiple submissions
+        }
+
         if (!keyValidationService.isKeyValid()) {
             this.showCustomAlert('Please activate your access key to start chatting');
             return;
         }
 
+        if (!chatLimitService.canSendMessage()) {
+            this.showCustomAlert();
+            return;
+        }
+
+        const message = helpers.getEncoded(this.messageInput.innerHTML);
+        // Check if message is empty or contains only whitespace
+        if (!message || !message.trim()) {
+            return;
+        }
+
+        // Show processing state
+        sendButton.classList.add('processing');
+        sendButton.innerHTML = '<span class="material-symbols-outlined">sync</span>';
+
         try {
-            const canSend = await chatLimitService.canSendMessage();
-            if (!canSend) {
-                this.showCustomAlert();
-                return;
-            }
-
-            const message = helpers.getEncoded(this.messageInput.innerHTML);
-            // Check if message is empty or contains only whitespace
-            if (!message || !message.trim()) {
-                return;
-            }
-
             this.messageInput.innerHTML = "";
             await messageService.send(message, dbService.db);
 
-            const limits = await chatLimitService.getLimits();
-            this.remainingChats = limits.dailyLimit - limits.currentDailyCount;
+            this.remainingChats = chatLimitService.decrementChat();
             this.updateRemainingChatsDisplay();
-        } catch (error) {
-            console.error('Error sending message:', error);
-            this.showCustomAlert('Error sending message. Please try again.');
+        } finally {
+            // Reset button state
+            sendButton.classList.remove('processing');
+            sendButton.innerHTML = '<span class="material-symbols-outlined">send</span>';
         }
     }
 

@@ -41,9 +41,7 @@ for(const tab of tabs){
 
 navigateTo(tabs[0]);
 
-// Initialize KeyInput and append to user section
-const userSection = document.querySelector('.sidebar-section:nth-child(4)');
-if (userSection) {
-    const keyInput = new KeyInput();
-    userSection.appendChild(keyInput.container);
-}
+// Add key input to user section (after navigation setup)
+const userSection = document.querySelector('.sidebar-section:nth-child(4)'); // Select the User tab section
+const keyInput = new KeyInput();
+userSection.appendChild(keyInput.container);

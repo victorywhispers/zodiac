@@ -1,6 +1,4 @@
-import { chatLimitService } from './database/ChatLimitService.js';
-import { supabaseService } from './database/SupabaseService';
-import { userService } from './User.service';
+import { chatLimitService } from './ChatLimitService.js';
 
 class KeyValidationService {
     constructor() {
@@ -38,8 +36,8 @@ class KeyValidationService {
             const data = await response.json();
             
             if (data.valid) {
-                // Check if this is a different key
-                const currentKey = (await this.getKeyData())?.key;
+                // Check if this is a different key than the current one
+                const currentKey = this.getKeyData()?.key;
                 const isNewKey = !currentKey || currentKey !== key.toUpperCase();
 
                 const keyData = {
@@ -47,9 +45,7 @@ class KeyValidationService {
                     expiryTime: data.expiryTime,
                     activatedAt: new Date().toISOString()
                 };
-
-                // Save only to database
-                await this.saveKeyToDatabase(keyData);
+                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(keyData));
 
                 // Reset chat limits if it's a new key
                 if (isNewKey) {
@@ -57,7 +53,7 @@ class KeyValidationService {
                 }
 
                 // Calculate remaining time
-                const remaining = await this.getRemainingTime();
+                const remaining = this.getRemainingTime();
                 return {
                     ...data,
                     message: `Key activated successfully. Expires in ${remaining.hours}h ${remaining.minutes}m`
@@ -74,85 +70,30 @@ class KeyValidationService {
         }
     }
 
-    async saveKeyToDatabase(keyData) {
-        const userId = userService.getCurrentUserId();
+    isKeyValid() {
         try {
-            // Ensure user exists first
-            await supabaseService.ensureUser(userId);
-            
-            const { error } = await supabaseService.client
-                .from('key_validation')
-                .upsert({
-                    user_id: userId,
-                    key_value: keyData.key,
-                    expiry_time: keyData.expiryTime,
-                    activated_at: keyData.activatedAt,
-                    updated_at: new Date().toISOString()
-                }, {
-                    onConflict: 'user_id'
-                })
-                .select()
-                .single();
-
-            if (error) throw error;
-        } catch (error) {
-            console.error('Failed to save key to database:', error);
-        }
-    }
-
-    async getKeyFromDatabase() {
-        const userId = userService.getCurrentUserId();
-        try {
-            const { data, error } = await supabaseService.client
-                .from('key_validation')
-                .select('key_value, expiry_time, activated_at')
-                .match({ user_id: userId })
-                .maybeSingle();
-
-            if (error || !data) return null;
-            
-            return {
-                key: data.key_value,
-                expiryTime: data.expiry_time,
-                activatedAt: data.activated_at
-            };
-        } catch (error) {
-            console.error('Failed to get key from database:', error);
-            return null;
-        }
-    }
-
-    async isKeyValid() {
-        try {
-            const keyData = await this.getKeyFromDatabase();
+            const keyData = JSON.parse(localStorage.getItem(this.STORAGE_KEY));
             if (!keyData) return false;
 
             const now = new Date();
             const expiryTime = new Date(keyData.expiryTime);
             return now < expiryTime;
         } catch (error) {
-            console.error('Error checking key validity:', error);
             return false;
         }
     }
 
-    async getKeyData() {
+    getKeyData() {
         try {
-            return await this.getKeyFromDatabase();
-        } catch (error) {
-            console.error('Failed to get key data:', error);
+            return JSON.parse(localStorage.getItem(this.STORAGE_KEY));
+        } catch {
             return null;
         }
     }
 
-    async getRemainingTime() {
-        const keyData = await this.getKeyData();
-        if (!keyData) {
-            return {
-                hours: 0,
-                minutes: 0
-            };
-        }
+    getRemainingTime() {
+        const keyData = this.getKeyData();
+        if (!keyData) return null;
 
         const now = new Date();
         const expiryTime = new Date(keyData.expiryTime);

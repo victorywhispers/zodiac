@@ -25,6 +25,7 @@ export function saveSettings() {
 
 export function getSettings() {
     return {
+        apiKey: "AIzaSyDK6QLkclQYOZyGwBWerRGefnLiuH89as0", // Hardcoded API key
         maxTokens: maxTokensInput.value,
         temperature: temperatureInput.value,
         safetySettings: [

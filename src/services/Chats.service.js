@@ -1,6 +1,6 @@
 import * as messageService from "./Message.service";
 import * as helpers from "../utils/helpers";
-import { db, setupDB } from './Db.service.js'; // Add setupDB import
+import { db } from './Db.service.js';
 
 const messageContainer = document.querySelector(".message-container");
 const chatHistorySection = document.querySelector("#chatHistorySection");
@@ -14,42 +14,25 @@ export function getCurrentChatId() {
     return null;
 }
 
-export async function getAllChatIdentifiers() {
+export async function getAllChatIdentifiers(db) {
     try {
-        if (!db?.chats) {
-            console.error('Database not ready');
-            return [];
-        }
-
-        const chats = await db.chats.orderBy('timestamp').toArray();
-        return chats.map(chat => ({
-            id: chat.id,
-            title: chat.title
-        }));
+        let identifiers = [];
+        await db.chats.orderBy('timestamp').each(
+            chat => {
+                identifiers.push({ id: chat.id, title: chat.title });
+            }
+        );
+        return identifiers;
     } catch (error) {
-        console.error('Error getting chat identifiers:', error);
-        return [];
+        console.error(error);
     }
 }
 
-export async function initialize() {
-    try {
-        // Ensure DB is initialized
-        await db.open();
-        
-        chatHistorySection.innerHTML = "";
-        const chats = await getAllChatIdentifiers();
-        
-        if (Array.isArray(chats)) {
-            for (let chat of chats) {
-                insertChatEntry(chat);
-            }
-        } else {
-            console.error('Invalid chats data:', chats);
-        }
-    } catch (error) {
-        console.error('Error initializing chats:', error);
-        throw error;
+export async function initialize(db) {
+    chatHistorySection.innerHTML = "";
+    const chats = await getAllChatIdentifiers(db);
+    for (let chat of chats) {
+        insertChatEntry(chat, db);
     }
 }
 
@@ -160,33 +143,16 @@ export async function deleteChat(id, db) {
 
 export async function loadChat(chatID, db) {
     try {
-        // Wait for DB to be ready
-        if (!db) {
-            db = await setupDB();
-        }
-
-        if (!chatID || !db?.chats) {
-            console.error('Invalid chat ID or database not initialized');
-            return;
-        }
-
+        if (!chatID) return;
         messageContainer.innerHTML = "";
         const chat = await getChatById(chatID, db);
-        
-        if (chat?.content) {
-            for (const msg of chat.content) {
-                await messageService.insertMessage(
-                    msg.role, 
-                    msg.parts[0].text, 
-                    msg.personality, 
-                    null, 
-                    db
-                );
-            }
-            messageContainer.scrollTo(0, messageContainer.scrollHeight);
+        for (const msg of chat.content) {
+            await messageService.insertMessage(msg.role, msg.parts[0].text, msg.personality, null, db);
         }
+        messageContainer.scrollTo(0, messageContainer.scrollHeight);
     } catch (error) {
-        console.error('Error loading chat:', error);
+        console.error(error);
+        alert("Error loading chat. Please try again.");
     }
 }
 
