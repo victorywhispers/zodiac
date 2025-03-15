@@ -4,7 +4,7 @@ export const DATABASE_CONFIG = {
         apiKey: import.meta.env.VITE_WEAVIATE_API_KEY
     },
     SUPABASE: {
-        url: 'https://ybmwyhyylqhkfgtspllm.supabase.co',
-        apiKey: import.meta.env.VITE_SUPABASE_API_KEY // Use environment variable instead of hardcoded key
+        url: import.meta.env.VITE_SUPABASE_URL,
+        apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY  // Use ANON_KEY instead of API_KEY
     }
 };
