@@ -30,37 +30,28 @@ export class KeyValidationService {
             const response = await fetch(`${this.API_URL}/api/validate-key`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ key: key.toUpperCase() })
             });
 
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
             
             if (data.valid) {
                 // Store key data
-                const keyData = {
+                localStorage.setItem(this.KEY_STORAGE, JSON.stringify({
                     key: key.toUpperCase(),
                     expiryTime: data.expiryTime,
                     activatedAt: new Date().toISOString()
-                };
-                localStorage.setItem(this.KEY_STORAGE, JSON.stringify(keyData));
-                
-                // Reset chat limits for new keys
-                const currentKey = this.getKeyData()?.key;
-                if (!currentKey || currentKey !== key.toUpperCase()) {
-                    await chatLimitService.resetChatLimit();
-                }
-
-                const remaining = this.getRemainingTime();
+                }));
                 return {
-                    ...data,
-                    message: `Key activated successfully. Expires in ${remaining.hours}h ${remaining.minutes}m`
+                    valid: true,
+                    message: data.message,
+                    expiryTime: data.expiryTime
                 };
             }
             
