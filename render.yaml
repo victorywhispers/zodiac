@@ -8,6 +8,10 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: VITE_SUPABASE_URL
+        value: https://ybmwyhyylqhkfgtspllm.supabase.co
+      - key: VITE_SUPABASE_API_KEY  
+        value: your_supabase_anon_key
 
   # Backend service  
   - type: web
