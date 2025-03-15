@@ -7,9 +7,11 @@ class WeaviateService {
         this.client = weaviate.client({
             scheme: 'https',
             host: DATABASE_CONFIG.WEAVIATE.url,
-            apiKey: new Headers({
-                'X-API-Key': DATABASE_CONFIG.WEAVIATE.apiKey
-            })
+            headers: {
+                'Authorization': `Bearer ${DATABASE_CONFIG.WEAVIATE.apiKey}`,
+                'X-API-Key': DATABASE_CONFIG.WEAVIATE.apiKey,
+                'Origin': window.location.origin
+            }
         });
         this.className = 'ChatMessage';
         this.initialize();
