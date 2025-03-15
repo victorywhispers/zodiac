@@ -5,14 +5,22 @@ import string
 import asyncio
 import datetime
 from datetime import timedelta
+from dotenv import load_dotenv
+from pathlib import Path
 
 from telegram import Update, Bot, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes, MessageHandler, filters
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
+# Load environment variables
+load_dotenv()
+
+# Get bot token from environment
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+
 # Bot configuration
-BOT_TOKEN = "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"  # Replace with your bot token
+# BOT_TOKEN = "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
@@ -28,7 +36,7 @@ WORMGPT_IMAGE = "https://i.imgur.com/Bcthuqf.jpeg"  # Replace with direct image 
 LIFETIME_KEY_IMAGE = "https://i.imgur.com/JW9CnYF.jpeg"  # Replace with direct image URL
 
 # User data storage file
-USER_DATA_FILE = "user_data.json"
+USER_DATA_FILE = Path(__file__).parent / "user_data.json"
 
 # Create or load user data
 if os.path.exists(USER_DATA_FILE):
