@@ -7,21 +7,16 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Get the absolute path to user_data.json from Telegram bot
-USER_DATA_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'user_data.json')
+# Load user data
+USER_DATA_FILE = "../user_data.json"
 
 def load_user_data():
-    try:
-        if not os.path.exists(USER_DATA_FILE):
-            return {}
+    if os.path.exists(USER_DATA_FILE):
         with open(USER_DATA_FILE, 'r') as f:
-            data = json.load(f)
-            return data
-    except Exception as e:
-        print(f"Error loading user data: {e}")
-        return {}
+            return json.load(f)
+    return {}
 
-@app.route('/validate-key', methods=['POST'])
+@app.route('/api/validate-key', methods=['POST'])
 def validate_key():
     try:
         data = request.json
@@ -32,7 +27,6 @@ def validate_key():
                 'message': 'No key provided'
             }), 400
 
-        print(f"Validating key: {key}")
         user_data = load_user_data()
 
         # Check if key exists in any user's data
@@ -70,4 +64,5 @@ def health_check():
     return jsonify({'status': 'alive'})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
