@@ -1,13 +1,13 @@
-export const DATABASE_CONFIG = {s-client';
-    WEAVIATE: {SE_CONFIG } from './config';
-        url: import.meta.env.VITE_WEAVIATE_URL,';
-        apiKey: import.meta.env.VITE_WEAVIATE_API_KEY
-    },WeaviateService {
-    SUPABASE: {() {
-        url: import.meta.env.VITE_SUPABASE_URL,
-        apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY
-    }       host: DATABASE_CONFIG.WEAVIATE.url,
-};          headers: {
+import weaviate from 'weaviate-ts-client';
+import { DATABASE_CONFIG } from './config';
+import { userService } from '../User.service.js';
+
+class WeaviateService {
+    constructor() {
+        this.client = weaviate.client({
+            scheme: 'https',
+            host: DATABASE_CONFIG.WEAVIATE.url,
+            headers: {
                 'Authorization': `Bearer ${DATABASE_CONFIG.WEAVIATE.apiKey}`,
                 'X-API-Key': DATABASE_CONFIG.WEAVIATE.apiKey,
                 'Origin': window.location.origin
@@ -33,22 +33,19 @@ export const DATABASE_CONFIG = {s-client';
                         properties: [
                             {
                                 name: 'text',
-                                dataType: ['text'],
+                                dataType: ['text']
                             },
                             {
                                 name: 'userId',
-                                dataType: ['string'],
+                                dataType: ['string']
                             },
                             {
                                 name: 'timestamp',
-                                dataType: ['int'],
+                                dataType: ['int']
                             }
-                        ],
+                        ]
                     })
                     .do();
-                console.log('Weaviate schema created successfully');
-            } else {
-                console.log('Weaviate schema already exists');
             }
         } catch (error) {
             console.error('Weaviate initialization error:', error);
