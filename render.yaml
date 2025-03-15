@@ -4,7 +4,8 @@ services:
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
-    startCommand: npm run start
     envVars:
       - key: PORT
         value: 10000
+      - key: NODE_VERSION
+        value: 18
