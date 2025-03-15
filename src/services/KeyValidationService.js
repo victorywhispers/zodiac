@@ -2,7 +2,8 @@ import { chatLimitService } from './ChatLimitService.js';
 
 export class KeyValidationService {
     constructor() {
-        this.API_URL = import.meta.env.VITE_API_URL;
+        // Set default API URL with fallback
+        this.API_URL = import.meta.env.VITE_API_URL || 'https://wormgpt-api.onrender.com';
         this.KEY_STORAGE = 'wormgpt_access_key';
         this.EXPIRY_STORAGE = 'wormgpt_key_expiry';
     }
@@ -30,30 +31,32 @@ export class KeyValidationService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
                 },
                 body: JSON.stringify({ key: key.toUpperCase() })
             });
 
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
             const data = await response.json();
             
             if (data.valid) {
-                // Check if this is a different key than the current one
-                const currentKey = this.getKeyData()?.key;
-                const isNewKey = !currentKey || currentKey !== key.toUpperCase();
-
+                // Store key data
                 const keyData = {
                     key: key.toUpperCase(),
                     expiryTime: data.expiryTime,
                     activatedAt: new Date().toISOString()
                 };
                 localStorage.setItem(this.KEY_STORAGE, JSON.stringify(keyData));
-
-                // Reset chat limits if it's a new key
-                if (isNewKey) {
+                
+                // Reset chat limits for new keys
+                const currentKey = this.getKeyData()?.key;
+                if (!currentKey || currentKey !== key.toUpperCase()) {
                     await chatLimitService.resetChatLimit();
                 }
 
-                // Calculate remaining time
                 const remaining = this.getRemainingTime();
                 return {
                     ...data,
