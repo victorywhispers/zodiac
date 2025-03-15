@@ -5,11 +5,11 @@ import { userService } from '../User.service.js';
 class WeaviateService {
     constructor() {
         this.client = weaviate.client({
-            scheme: 'http',
-            host: 'localhost:5173/weaviate',
-            headers: {
-                'Authorization': `Bearer ${DATABASE_CONFIG.WEAVIATE.apiKey}`
-            }
+            scheme: 'https',
+            host: DATABASE_CONFIG.WEAVIATE.url,
+            apiKey: new Headers({
+                'X-API-Key': DATABASE_CONFIG.WEAVIATE.apiKey
+            })
         });
         this.className = 'ChatMessage';
         this.initialize();
