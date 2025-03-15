@@ -21,6 +21,18 @@ def load_user_data():
                 return {}
     return {}
 
+# Add root route
+@app.route('/', methods=['GET'])
+def root():
+    return jsonify({
+        'status': 'running',
+        'version': '1.0.0',
+        'endpoints': [
+            '/health',
+            '/api/validate-key'
+        ]
+    })
+
 @app.route('/api/validate-key', methods=['POST'])
 def validate_key():
     try:
