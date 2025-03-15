@@ -23,3 +23,5 @@ services:
         value: production
       - key: CORS_ORIGINS
         value: https://wormgpt-frontend.onrender.com
+    healthCheckPath: /health
+    healthCheckTimeout: 60
