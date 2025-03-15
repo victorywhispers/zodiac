@@ -6,6 +6,7 @@ export class KeyValidationService {
         this.API_URL = import.meta.env.VITE_API_URL || 'https://wormgpt-api.onrender.com';
         this.KEY_STORAGE = 'wormgpt_access_key';
         this.EXPIRY_STORAGE = 'wormgpt_key_expiry';
+        this.USER_ID_STORAGE = 'wormgpt_user_id';
     }
 
     validateKeyFormat(key) {
@@ -61,6 +62,52 @@ export class KeyValidationService {
             return { 
                 valid: false, 
                 message: 'Error connecting to validation server. Please try again.' 
+            };
+        }
+    }
+
+    async generateTrialKey() {
+        try {
+            let userId = localStorage.getItem(this.USER_ID_STORAGE);
+            if (!userId) {
+                userId = 'web_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem(this.USER_ID_STORAGE, userId);
+            }
+
+            const response = await fetch(`${this.API_URL}/api/generate-key`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ userId })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate key');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                localStorage.setItem(this.KEY_STORAGE, JSON.stringify({
+                    key: data.key,
+                    expiryTime: data.expiryTime,
+                    activatedAt: new Date().toISOString()
+                }));
+                return {
+                    success: true,
+                    key: data.key,
+                    expiryTime: data.expiryTime
+                };
+            }
+            return {
+                success: false,
+                message: data.message || 'Failed to generate key'
+            };
+        } catch (error) {
+            console.error('Error generating key:', error);
+            return {
+                success: false,
+                message: 'Error connecting to server'
             };
         }
     }
