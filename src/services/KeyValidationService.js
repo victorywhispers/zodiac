@@ -43,12 +43,13 @@ export class KeyValidationService {
             const data = await response.json();
             
             if (data.valid) {
-                // Store key data
-                localStorage.setItem(this.KEY_STORAGE, JSON.stringify({
+                // Store key data with proper structure
+                const keyData = {
                     key: key.toUpperCase(),
                     expiryTime: data.expiryTime,
                     activatedAt: new Date().toISOString()
-                }));
+                };
+                localStorage.setItem(this.KEY_STORAGE, JSON.stringify(keyData));
                 return {
                     valid: true,
                     message: data.message,
@@ -113,18 +114,23 @@ export class KeyValidationService {
     }
 
     isKeyValid() {
-        const key = localStorage.getItem(this.KEY_STORAGE);
-        const expiry = localStorage.getItem(this.EXPIRY_STORAGE);
+        try {
+            const keyData = this.getKeyData();
+            if (!keyData) return false;
 
-        if (!key || !expiry) return false;
-
-        const expiryDate = new Date(expiry);
-        return expiryDate > new Date();
+            const expiryTime = new Date(keyData.expiryTime);
+            const now = new Date();
+            return expiryTime > now;
+        } catch (error) {
+            console.error('Error checking key validity:', error);
+            return false;
+        }
     }
 
     getKeyData() {
         try {
-            return JSON.parse(localStorage.getItem(this.KEY_STORAGE));
+            const data = localStorage.getItem(this.KEY_STORAGE);
+            return data ? JSON.parse(data) : null;
         } catch {
             return null;
         }
