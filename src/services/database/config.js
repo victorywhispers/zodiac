@@ -5,6 +5,6 @@ export const DATABASE_CONFIG = {
     },
     SUPABASE: {
         url: import.meta.env.VITE_SUPABASE_URL,
-        apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY  // Use ANON_KEY instead of API_KEY
+        apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY
     }
 };
