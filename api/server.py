@@ -3,6 +3,7 @@ from flask_cors import CORS
 import json
 import datetime
 import os
+from pathlib import Path
 
 app = Flask(__name__)
 CORS(app, resources={
@@ -13,11 +14,12 @@ CORS(app, resources={
     }
 })
 
-# Load user data
-USER_DATA_FILE = "../user_data.json"
+# Update path to be relative to the script location
+BASE_DIR = Path(__file__).parent.parent
+USER_DATA_FILE = BASE_DIR / "user_data.json"
 
 def load_user_data():
-    if os.path.exists(USER_DATA_FILE):
+    if USER_DATA_FILE.exists():
         with open(USER_DATA_FILE, 'r') as f:
             return json.load(f)
     return {}
