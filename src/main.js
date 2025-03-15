@@ -54,7 +54,7 @@ function initializeErrorHandling() {
 function initializeNetworkHandling() {
     let isReconnecting = false;
     let connectionStatus = document.createElement('div');
-    connectionStatus.className = 'connection-status';
+    connectionStatus.className = 'connection-status online'; // Set default to online
     document.body.appendChild(connectionStatus);
 
     function updateConnectionStatus(online) {
@@ -64,52 +64,19 @@ function initializeNetworkHandling() {
             '📡 Offline - Reconnecting...';
     }
 
-    // Check connection on load
-    updateConnectionStatus(navigator.onLine);
-
-    // Online event handler
-    window.addEventListener('online', async () => {
-        updateConnectionStatus(true);
-        showSuccessToast('Connection restored! Refreshing...');
-        
-        // Wait 2 seconds before refreshing to show the toast
-        setTimeout(() => {
-            window.location.reload();
-        }, 2000);
-    });
-
-    // Offline event handler
+    // Only check when actually offline
     window.addEventListener('offline', () => {
         updateConnectionStatus(false);
         showErrorToast('No internet connection. Please check your connection.');
     });
 
-    // Periodic connection check
-    setInterval(async () => {
-        try {
-            const response = await fetch('/ping', { 
-                method: 'HEAD',
-                cache: 'no-cache'
-            });
-            
-            if (!response.ok) {
-                throw new Error('Connection test failed');
-            }
-            
-            if (isReconnecting) {
-                isReconnecting = false;
-                updateConnectionStatus(true);
-                showSuccessToast('Connection restored!');
-                setTimeout(() => window.location.reload(), 2000);
-            }
-        } catch (error) {
-            if (!isReconnecting) {
-                isReconnecting = true;
-                updateConnectionStatus(false);
-                showErrorToast('Connection lost. Attempting to reconnect...');
-            }
-        }
-    }, 30000); // Check every 30 seconds
+    window.addEventListener('online', () => {
+        updateConnectionStatus(true);
+        showSuccessToast('Connection restored!');
+    });
+
+    // Remove the periodic ping check
+    // setInterval(...) removed
 }
 
 function showErrorToast(message) {
