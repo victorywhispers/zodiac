@@ -20,3 +20,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
+      - key: CORS_ORIGINS
+        value: https://wormgpt-frontend.onrender.com
