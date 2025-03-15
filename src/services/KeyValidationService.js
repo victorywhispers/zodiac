@@ -1,9 +1,10 @@
 import { chatLimitService } from './ChatLimitService.js';
 
-class KeyValidationService {
+export class KeyValidationService {
     constructor() {
-        this.STORAGE_KEY = 'wormgpt_access_key';
-        this.BASE_URL = 'http://localhost:5000';
+        this.API_URL = import.meta.env.VITE_API_URL;
+        this.KEY_STORAGE = 'wormgpt_access_key';
+        this.EXPIRY_STORAGE = 'wormgpt_key_expiry';
     }
 
     validateKeyFormat(key) {
@@ -25,7 +26,7 @@ class KeyValidationService {
                 };
             }
 
-            const response = await fetch(`${this.BASE_URL}/validate-key`, {
+            const response = await fetch(`${this.API_URL}/api/validate-key`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -45,7 +46,7 @@ class KeyValidationService {
                     expiryTime: data.expiryTime,
                     activatedAt: new Date().toISOString()
                 };
-                localStorage.setItem(this.STORAGE_KEY, JSON.stringify(keyData));
+                localStorage.setItem(this.KEY_STORAGE, JSON.stringify(keyData));
 
                 // Reset chat limits if it's a new key
                 if (isNewKey) {
@@ -71,21 +72,18 @@ class KeyValidationService {
     }
 
     isKeyValid() {
-        try {
-            const keyData = JSON.parse(localStorage.getItem(this.STORAGE_KEY));
-            if (!keyData) return false;
+        const key = localStorage.getItem(this.KEY_STORAGE);
+        const expiry = localStorage.getItem(this.EXPIRY_STORAGE);
 
-            const now = new Date();
-            const expiryTime = new Date(keyData.expiryTime);
-            return now < expiryTime;
-        } catch (error) {
-            return false;
-        }
+        if (!key || !expiry) return false;
+
+        const expiryDate = new Date(expiry);
+        return expiryDate > new Date();
     }
 
     getKeyData() {
         try {
-            return JSON.parse(localStorage.getItem(this.STORAGE_KEY));
+            return JSON.parse(localStorage.getItem(this.KEY_STORAGE));
         } catch {
             return null;
         }
