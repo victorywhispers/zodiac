@@ -10,8 +10,8 @@ services:
         value: 10000
       - key: VITE_SUPABASE_URL
         value: https://ybmwyhyylqhkfgtspllm.supabase.co
-      - key: VITE_SUPABASE_API_KEY  
-        value: your_supabase_anon_key
+      - key: VITE_SUPABASE_API_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi6InlibXd5aHl5bHFoa2ZndHNwbGxtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTYxOTEyMSwiZXhwIjoyMDU3MTk1MTIxfQ.tkf5T8Bm42GjuUswOPEPFijN1VPTpN7sCCu66dn2Gfs
 
   # Backend service  
   - type: web
@@ -26,3 +26,7 @@ services:
         value: 18791
       - key: BOT_TOKEN
         value: 7693246799:AAF30PjRnkpRDowNL58IDrRdW7ALs2VLTGA
+      - key: SUPABASE_URL
+        value: https://ybmwyhyylqhkfgtspllm.supabase.co
+      - key: SUPABASE_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi6InlibXd5aHl5bHFoa2ZndHNwbGxtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MTYxOTEyMSwiZXhwIjoyMDU3MTk1MTIxfQ.tkf5T8Bm42GjuUswOPEPFijN1VPTpN7sCCu66dn2Gfs
