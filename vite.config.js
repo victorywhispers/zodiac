@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
         root: 'src',
         build: {
             target: 'esnext',
-            outDir: 'dist',
+            outDir: '../dist', // Change this line
             emptyOutDir: true,
             assetsDir: 'assets',
         },
