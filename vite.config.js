@@ -1,9 +1,13 @@
-/** @type {import('vite').UserConfig} */
-export default {
+import { defineConfig } from 'vite'
+
+export default defineConfig({
     root: 'src',
     build: {
-        target: 'esnext',
         outDir: '../dist',
         emptyOutDir: true,
+    },
+    preview: {
+        port: process.env.PORT || 3000,
+        host: '0.0.0.0'
     }
-}
+})
