@@ -182,3 +182,31 @@ export function initializeChatButtons() {
         });
     }
 }
+
+// Add these export functions
+export async function createNewChat() {
+    messageContainer.innerHTML = "";
+    const currentSelected = document.querySelector("input[name='currentChat']:checked");
+    if (currentSelected) {
+        currentSelected.checked = false;
+    }
+    const noneRadio = document.querySelector("input[value='none']");
+    if (noneRadio) {
+        noneRadio.checked = true;
+    }
+}
+
+export async function clearAllChats(db) {
+    try {
+        await db.chats.clear();
+        initialize(db);
+        messageContainer.innerHTML = "";
+        const noneRadio = document.querySelector("input[value='none']");
+        if (noneRadio) {
+            noneRadio.checked = true;
+        }
+    } catch (error) {
+        console.error("Error clearing chats:", error);
+        showErrorToast("Error clearing chats. Please try again.");
+    }
+}
