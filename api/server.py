@@ -6,13 +6,7 @@ import os
 from pathlib import Path
 
 app = Flask(__name__)
-CORS(app, resources={
-    r"/api/*": {
-        "origins": os.getenv('CORS_ORIGINS', '*').split(','),
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+CORS(app)
 
 # Update path to be relative to the script location
 BASE_DIR = Path(__file__).parent.parent
@@ -21,7 +15,10 @@ USER_DATA_FILE = BASE_DIR / "user_data.json"
 def load_user_data():
     if USER_DATA_FILE.exists():
         with open(USER_DATA_FILE, 'r') as f:
-            return json.load(f)
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
     return {}
 
 @app.route('/api/validate-key', methods=['POST'])
@@ -54,6 +51,10 @@ def validate_key():
                         })
                 except Exception as e:
                     print(f"Error processing key validation: {e}")
+                    return jsonify({
+                        'valid': False,
+                        'message': 'Error processing key'
+                    }), 500
 
         return jsonify({
             'valid': False,
