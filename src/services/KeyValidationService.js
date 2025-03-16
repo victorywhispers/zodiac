@@ -4,8 +4,9 @@ import { db } from './Db.service.js';
 class KeyValidationService {
     constructor() {
         this.STORAGE_KEY = 'wormgpt_access_key';
+        // Update the production URL to match your Render deployment
         this.BASE_URL = process.env.NODE_ENV === 'production' 
-            ? 'https://wormgpt-backend.onrender.com'
+            ? 'https://wormgpt-api.onrender.com'  // Should match your API service name in render.yaml
             : 'http://127.0.0.1:5000';
     }
 
@@ -29,9 +30,14 @@ class KeyValidationService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ key: key.toUpperCase() })
             });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const data = await response.json();
             console.log('Server response:', data);
