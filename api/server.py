@@ -8,9 +8,14 @@ app = Flask(__name__)
 # Update CORS configuration
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:5173", "https://wormgpt-frontend.onrender.com"],
+        "origins": [
+            "http://localhost:5173",
+            "https://wormgpt-frontend.onrender.com",
+            "https://wormgpt-frontend.onrender.com/"
+        ],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Accept", "Origin"]
+        "allow_headers": ["Content-Type", "Accept", "Origin"],
+        "supports_credentials": True
     }
 })
 
