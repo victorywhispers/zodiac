@@ -5,7 +5,14 @@ import datetime
 import os
 
 app = Flask(__name__)
-CORS(app)
+# Update CORS configuration
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:5173", "https://wormgpt-frontend.onrender.com"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Accept", "Origin"]
+    }
+})
 
 # Use environment variables for production
 USER_DATA_FILE = os.getenv('USER_DATA_FILE', os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'user_data.json')))
