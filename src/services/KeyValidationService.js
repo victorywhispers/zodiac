@@ -4,10 +4,10 @@ import { db } from './Db.service.js';
 class KeyValidationService {
     constructor() {
         this.STORAGE_KEY = 'wormgpt_access_key';
-        // Update the production URL to match your Render deployment
+        // Update to match your Render service name
         this.BASE_URL = process.env.NODE_ENV === 'production' 
-            ? 'https://wormgpt-api.onrender.com'  // Should match your API service name in render.yaml
-            : 'http://127.0.0.1:5000';
+            ? 'https://wormgpt-api.onrender.com'
+            : 'http://localhost:5000';
     }
 
     validateKeyFormat(key) {
@@ -25,18 +25,22 @@ class KeyValidationService {
             }
 
             console.log('Validating key with server:', key);
+            console.log('Using API URL:', this.BASE_URL);
             
             const response = await fetch(`${this.BASE_URL}/validate-key`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'Origin': window.location.origin
                 },
+                credentials: 'include',
                 body: JSON.stringify({ key: key.toUpperCase() })
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                console.error('Server error:', response.status, response.statusText);
+                throw new Error(`Server error: ${response.status}`);
             }
 
             const data = await response.json();
@@ -54,9 +58,16 @@ class KeyValidationService {
             return data;
         } catch (error) {
             console.error('Key validation error:', error);
+            // More specific error message based on error type
+            if (error.message.includes('Failed to fetch')) {
+                return { 
+                    valid: false, 
+                    message: 'Cannot reach validation server. Please check your internet connection.' 
+                };
+            }
             return { 
                 valid: false, 
-                message: 'Error connecting to validation server. Please try again.' 
+                message: `Validation server error: ${error.message}` 
             };
         }
     }
