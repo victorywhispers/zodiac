@@ -21,15 +21,17 @@ function navigateTo(tab) {
     if (index == activeTabIndex) {
         return;
     }
-    tab.classList.add("navbar-tab-active");
-    //hide active view before proceding
-    if (activeTabIndex !== undefined) {
-        helpers.hideElement(sidebarViews[activeTabIndex]);
-        tabs[activeTabIndex].classList.remove("navbar-tab-active");
-    }
-    helpers.showElement(sidebarViews[index], true);
-    activeTabIndex = index;
-    tabHighlight.style.left = `calc(100% / ${tabs.length} * ${index})`;
+    
+    requestAnimationFrame(() => {
+        tab.classList.add("navbar-tab-active");
+        if (activeTabIndex !== undefined) {
+            helpers.hideElement(sidebarViews[activeTabIndex]);
+            tabs[activeTabIndex].classList.remove("navbar-tab-active");
+        }
+        helpers.showElement(sidebarViews[index], true);
+        activeTabIndex = index;
+        tabHighlight.style.left = `calc(100% / ${tabs.length} * ${index})`;
+    });
 }
 //tab setup
 tabHighlight.style.width = `calc(100% / ${tabs.length})`;
