@@ -11,8 +11,21 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
+# Add these new imports
+from aiohttp import web
+import logging
+
+# Configure logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+# Get port from environment variable
+PORT = int(os.environ.get('PORT', 8080))
+
 # Bot configuration
-BOT_TOKEN = "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"  # Replace with your bot token
+BOT_TOKEN = "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
@@ -675,6 +688,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Redirect users to the menu when they send text messages
     await start_command(update, context)
 
+async def web_server():
+    app = web.Application()
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', PORT)
+    await site.start()
+    logging.info(f"Web server started on port {PORT}")
+
 def main():
     # Create the Application
     application = Application.builder().token(BOT_TOKEN).build()
@@ -684,9 +705,22 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Start the Bot
+    # Start the web server alongside the bot
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+        close_loop=False
+    )
+    
+    # Start web server
+    asyncio.get_event_loop().create_task(web_server())
+    
+    # Keep the process running
     print("Bot is running...")
-    application.run_polling()
+    try:
+        asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == "__main__":
     main()
