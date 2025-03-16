@@ -24,18 +24,12 @@ services:
       python -m pip install --upgrade pip
       pip install -r requirements.txt
       mkdir -p /data
-      # Copy user_data.json to the shared disk directory with debug output
-      echo "Copying user_data.json to /data"
-      cp ./user_data.json /data/user_data.json
-      ls -la /data
+      cp user_data.json /data/user_data.json || echo "No initial user_data.json"
+      chmod 666 /data/user_data.json || true
     startCommand: cd api && gunicorn server:app
     envVars:
-      - key: FLASK_ENV
-        value: production
       - key: USER_DATA_FILE
         value: /data/user_data.json
-      - key: CORS_ORIGINS
-        value: https://wormgpt-frontend.onrender.com
 
   # Telegram Bot Service
   - type: web
