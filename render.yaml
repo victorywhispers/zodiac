@@ -15,7 +15,7 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-    startCommand: cd api && gunicorn server:app
+    startCommand: gunicorn api.server:app
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -38,7 +38,7 @@ services:
       - key: PYTHON_VERSION
         value: 3.9.0
       - key: BOT_TOKEN
-        value: "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"
+        value: "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"
       - key: CHANNEL_USERNAME
         value: "hecabruss"
       - key: CHANNEL_LINK
