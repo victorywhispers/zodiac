@@ -2,63 +2,57 @@ import { keyValidationService } from '../services/KeyValidationService.js';
 
 export class KeyInput {
     constructor() {
+        // Create the container instead of querying it
         this.container = document.createElement('div');
-        this.container.className = 'key-input-container';
-        this.render();
+        this.container.className = 'key-status-section';
         this.initialize();
     }
 
-    render() {
-        const keyData = keyValidationService.getKeyData();
-        const remaining = keyValidationService.getRemainingTime();
+    async initialize() {
+        await this.render();
+        this.startUpdateTimer();
+    }
+
+    async render() {
+        const keyData = await keyValidationService.getKeyData();
+        const remaining = await keyValidationService.getRemainingTime();
 
         this.container.innerHTML = `
-            <div class="key-status-section">
-                <h3>Access Key Status</h3>
-                <div class="key-info">
-                    ${keyData ? `
-                        <div class="key-display">
-                            <div class="key-value">
-                                <span class="material-symbols-outlined">vpn_key</span>
-                                ${keyData.key}
-                            </div>
-                            <div class="key-expiry">
-                                <span class="material-symbols-outlined">schedule</span>
-                                Expires in ${remaining.hours}h ${remaining.minutes}m
-                            </div>
+            <h3>Access Key Status</h3>
+            <div class="key-info">
+                ${keyData ? `
+                    <div class="key-display">
+                        <div class="key-value">
+                            <span class="material-symbols-outlined">vpn_key</span>
+                            ${keyData.key || 'No key'}
                         </div>
-                        <div class="key-meta">
-                            <div class="activation-date">
-                                Activated: ${new Date(keyData.activatedAt).toLocaleString()}
-                            </div>
-                            <div class="expiry-date">
-                                Expires: ${new Date(keyData.expiryTime).toLocaleString()}
-                            </div>
+                        <div class="key-expiry">
+                            <span class="material-symbols-outlined">schedule</span>
+                            ${remaining ? `Expires in ${remaining.hours}h ${remaining.minutes}m` : 'Expired'}
                         </div>
-                    ` : `
-                        <div class="no-key-message">
-                            <span class="material-symbols-outlined">error</span>
-                            No active key found
+                    </div>
+                    <div class="key-meta">
+                        <div class="activation-date">
+                            Activated: ${keyData.activatedAt ? new Date(keyData.activatedAt).toLocaleString() : 'Not available'}
                         </div>
-                    `}
-                </div>
+                        <div class="expiry-date">
+                            Expires: ${keyData.expiryTime ? new Date(keyData.expiryTime).toLocaleString() : 'Not available'}
+                        </div>
+                    </div>
+                ` : `
+                    <div class="no-key-message">
+                        <span class="material-symbols-outlined">error</span>
+                        No active key found
+                    </div>
+                `}
             </div>
         `;
     }
 
-    initialize() {
-        // Only need to handle auto-updates of remaining time
-        if (keyValidationService.isKeyValid()) {
-            setInterval(() => {
-                const remaining = keyValidationService.getRemainingTime();
-                const expiryElement = this.container.querySelector('.key-expiry');
-                if (expiryElement) {
-                    expiryElement.innerHTML = `
-                        <span class="material-symbols-outlined">schedule</span>
-                        Expires in ${remaining.hours}h ${remaining.minutes}m
-                    `;
-                }
-            }, 60000); // Update every minute
-        }
+    startUpdateTimer() {
+        // Update remaining time every minute
+        setInterval(async () => {
+            await this.render();
+        }, 60000);
     }
 }

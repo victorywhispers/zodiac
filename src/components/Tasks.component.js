@@ -2,54 +2,56 @@ import { tasksService } from '../services/Tasks.service.js';
 
 export class TasksComponent {
     constructor() {
-        // Wait for DOM to be ready
-        document.addEventListener('DOMContentLoaded', () => {
-            this.initialize();
-        });
+        this.tasksService = tasksService;
     }
 
-    initialize() {
+    async initialize() {
         const taskButton = document.getElementById('task1-button');
         if (!taskButton) return;
+
+        // Check if task is already completed
+        if (this.tasksService.isTaskCompleted('task1')) {
+            const taskCard = document.getElementById('task1');
+            if (taskCard) {
+                taskCard.style.display = 'none';
+            }
+            return;
+        }
+
+        await this.updateBonusDisplay();
 
         taskButton.addEventListener('click', async (e) => {
             e.preventDefault();
             
-            // Update bot link
-            window.open('https://t.me/LuckyDrawMasterBot/app?startapp=Y2g9a1FqOXh2SFI3RyZnPXNwJmw9a1FqOXh2SFI3RyZzbz1TaGFyZSZ1PTc5MDM1MDA0NTA=', '_blank');
+            // Open bot link in new tab
+            window.open('https://t.me/Get_Chatgpt2Bot?start=7903500450', '_blank');
 
-            // Hide button immediately
-            taskButton.classList.add('hidden');
+            const timerContainer = document.querySelector('.task-timer');
+            const timerElement = document.getElementById('task1-timer');
             
-            // Complete task after delay without showing timer
-            setTimeout(() => {
-                tasksService.completeTask('task1');
-                
-                // Show success message
-                const taskContent = document.querySelector('#task1 .task-content');
-                if (taskContent) {
-                    taskContent.innerHTML = `
-                        <div class="task-success">
-                            <span class="material-symbols-outlined">check_circle</span>
-                            Task completed! 20 bonus messages added to your account
-                        </div>
-                    `;
+            taskButton.classList.add('hidden');
+            timerContainer.classList.remove('hidden');
+            
+            let timeLeft = 120;
+            const timer = setInterval(async () => {
+                timeLeft--;
+                if (timerElement) {
+                    timerElement.textContent = timeLeft;
                 }
                 
-                // Hide task after delay
-                setTimeout(() => {
-                    const taskCard = document.getElementById('task1');
-                    if (taskCard) {
-                        taskCard.classList.add('completed');
-                    }
-                }, 3000);
-            }, 5000); // Reduced from 120s to 5s for better UX
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    await this.tasksService.completeTask('task1');
+                    await this.updateBonusDisplay();
+                }
+            }, 1000);
         });
+    }
 
-        // Initialize bonus messages display on load
+    async updateBonusDisplay() {
         const bonusElement = document.getElementById('bonus-messages-count');
         if (bonusElement) {
-            const currentBonus = tasksService.getBonusMessages();
+            const currentBonus = await this.tasksService.getBonusMessages();
             bonusElement.textContent = `${currentBonus} bonus messages`;
         }
     }

@@ -139,3 +139,39 @@ node_modules
 #live-server
 .vite
 .vite/*
+
+# Python
+*.pyc
+__pycache__/
+
+# Project specific
+dist/
+.env
+__pycache__/
+*.pyc
+.vite
+user_data.json
+.vscode/
+
+# Dependencies
+node_modules/
+dist/
+
+# Environment
+.env
+.env.*
+
+# Python
+__pycache__/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# Build/Cache
+.vite/
+.cache/
+
+# Project specific
+user_data.json

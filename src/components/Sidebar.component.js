@@ -21,17 +21,15 @@ function navigateTo(tab) {
     if (index == activeTabIndex) {
         return;
     }
-    
-    requestAnimationFrame(() => {
-        tab.classList.add("navbar-tab-active");
-        if (activeTabIndex !== undefined) {
-            helpers.hideElement(sidebarViews[activeTabIndex]);
-            tabs[activeTabIndex].classList.remove("navbar-tab-active");
-        }
-        helpers.showElement(sidebarViews[index], true);
-        activeTabIndex = index;
-        tabHighlight.style.left = `calc(100% / ${tabs.length} * ${index})`;
-    });
+    tab.classList.add("navbar-tab-active");
+    //hide active view before proceding
+    if (activeTabIndex !== undefined) {
+        helpers.hideElement(sidebarViews[activeTabIndex]);
+        tabs[activeTabIndex].classList.remove("navbar-tab-active");
+    }
+    helpers.showElement(sidebarViews[index], true);
+    activeTabIndex = index;
+    tabHighlight.style.left = `calc(100% / ${tabs.length} * ${index})`;
 }
 //tab setup
 tabHighlight.style.width = `calc(100% / ${tabs.length})`;
@@ -43,7 +41,9 @@ for(const tab of tabs){
 
 navigateTo(tabs[0]);
 
-// Add key input to user section (after navigation setup)
-const userSection = document.querySelector('.sidebar-section:nth-child(4)'); // Select the User tab section
-const keyInput = new KeyInput();
-userSection.appendChild(keyInput.container);
+// Initialize KeyInput and append to user section
+const userSection = document.querySelector('.sidebar-section:nth-child(4)');
+if (userSection) {
+    const keyInput = new KeyInput();
+    userSection.appendChild(keyInput.container);
+}

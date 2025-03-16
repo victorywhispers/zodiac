@@ -1,8 +1,25 @@
+import { ErrorService } from './Error.service.js';
+
 export class TasksService {
     constructor() {
         this.STORAGE_KEY = 'wormgpt_tasks';
         this.BONUS_STORAGE_KEY = 'wormgpt_bonus_messages';
         this.initializeTasks();
+    }
+
+    initializeTasks() {
+        const tasks = this.getTasks();
+        if (!tasks) {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({}));
+        }
+        
+        const bonusMessages = this.getBonusMessages();
+        if (bonusMessages === null) {
+            localStorage.setItem(this.BONUS_STORAGE_KEY, '0');
+        }
+
+        // Check for completed tasks and hide them
+        this.hideCompletedTasks();
     }
 
     getTasks() {
@@ -13,68 +30,69 @@ export class TasksService {
         }
     }
 
-    initializeTasks() {
+    isTaskCompleted(taskId) {
         const tasks = this.getTasks();
-        if (!tasks) {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({}));
-        }
-        
-        // Hide completed tasks on initialization
-        const completedTasks = Object.keys(tasks).filter(taskId => tasks[taskId].completed);
-        completedTasks.forEach(taskId => {
-            const taskElement = document.getElementById(taskId);
-            if (taskElement) {
-                taskElement.style.display = 'none';
+        return tasks[taskId]?.completed || false;
+    }
+
+    getBonusMessages() {
+        return parseInt(localStorage.getItem(this.BONUS_STORAGE_KEY) || '0');
+    }
+
+    addBonusMessages(count) {
+        const current = this.getBonusMessages();
+        localStorage.setItem(this.BONUS_STORAGE_KEY, (current + count).toString());
+    }
+
+    hideCompletedTasks() {
+        const tasks = this.getTasks();
+        Object.entries(tasks).forEach(([taskId, task]) => {
+            if (task.completed) {
+                const taskElement = document.getElementById(taskId);
+                if (taskElement) {
+                    taskElement.style.display = 'none';
+                }
             }
         });
     }
 
-    async startTask(taskId) {
+    async completeTask(taskId) {
         const tasks = this.getTasks();
-        if (tasks[taskId] && tasks[taskId].completed) {
-            // If task is already completed, hide it
-            const taskElement = document.getElementById(taskId);
-            if (taskElement) {
-                taskElement.style.display = 'none';
-            }
+        
+        // Check if task is already completed
+        if (tasks[taskId]?.completed) {
             return false;
         }
 
-        // Rest of the startTask logic remains same
-        // ...existing code...
-    }
-
-    completeTask(taskId) {
-        const tasks = this.getTasks();
         tasks[taskId] = {
             completed: true,
             completedAt: new Date().toISOString()
         };
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(tasks));
 
-        // Hide the task immediately
-        const taskElement = document.getElementById(taskId);
-        if (taskElement) {
-            taskElement.style.display = 'none';
-        }
-
-        // Add bonus messages
+        // Add bonus messages for task1
         if (taskId === 'task1') {
             this.addBonusMessages(20);
+            const taskCard = document.getElementById('task1');
+            if (taskCard) {
+                const taskContent = taskCard.querySelector('.task-content');
+                if (taskContent) {
+                    taskContent.innerHTML = `
+                        <div class="task-success">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Task completed! 20 bonus messages added to your account
+                        </div>
+                    `;
+                }
+                
+                // Hide task after delay
+                setTimeout(() => {
+                    taskCard.style.display = 'none';
+                }, 3000);
+            }
+            return true;
         }
-    }
-
-    getBonusMessages() {
-        try {
-            return parseInt(localStorage.getItem(this.BONUS_STORAGE_KEY)) || 0;
-        } catch {
-            return 0;
-        }
-    }
-
-    addBonusMessages(count) {
-        const currentBonus = this.getBonusMessages();
-        localStorage.setItem(this.BONUS_STORAGE_KEY, currentBonus + count);
+        return false;
     }
 }
 

@@ -3,61 +3,78 @@ from flask_cors import CORS
 import json
 import datetime
 import os
-import string
-import random
-from pathlib import Path
 
 app = Flask(__name__)
 CORS(app)
 
-# Update path to be relative to the script location
-BASE_DIR = Path(__file__).parent.parent
-USER_DATA_FILE = BASE_DIR / "user_data.json"
+# Use environment variables for production
+USER_DATA_FILE = os.getenv('USER_DATA_FILE', os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'user_data.json')))
+print(f"Looking for user_data.json at: {USER_DATA_FILE}")
 
 def load_user_data():
-    if USER_DATA_FILE.exists():
+    try:
+        if not os.path.exists(USER_DATA_FILE):
+            print(f"user_data.json not found at: {USER_DATA_FILE}")
+            return {}
         with open(USER_DATA_FILE, 'r') as f:
-            try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return {}
-    return {}
+            data = json.load(f)
+            print("Loaded user data:", json.dumps(data, indent=2))
+            return data
+    except Exception as e:
+        print(f"Error loading user data: {e}")
+        return {}
 
-def generate_key():
-    return "WR-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-
-def get_expiry_time(days=1):
-    return (datetime.datetime.now() + datetime.timedelta(days=days)).strftime("%Y-%m-%d %H:%M:%S")
-
-# Add root route
-@app.route('/', methods=['GET'])
-def root():
+@app.route('/')
+def index():
     return jsonify({
-        'status': 'running',
-        'version': '1.0.0',
-        'endpoints': [
-            '/health',
-            '/api/validate-key',
-            '/api/generate-key'
-        ]
+        'status': 'alive',
+        'message': 'WormGPT API Server is running'
     })
 
-@app.route('/api/validate-key', methods=['POST'])
+@app.route('/validate-key', methods=['POST'])
 def validate_key():
     try:
         data = request.json
         key = data.get('key')
         if not key:
+            print("No key provided in request")
             return jsonify({
                 'valid': False,
                 'message': 'No key provided'
             }), 400
 
+        # Normalize key and add debug logging
+        key = key.upper()
+        print(f"\nValidation Request:")
+        print(f"Input key: {key}")
+        print(f"User data file: {USER_DATA_FILE}")
+        
         user_data = load_user_data()
+        if not user_data:
+            print("Warning: user_data.json is empty or not found")
+            
+        # Print user data structure
+        print("\nUser Data Structure:")
+        for user_id, info in user_data.items():
+            print(f"User {user_id}:")
+            print(f"  Key: {info.get('key', 'No key')}")
+            print(f"  Expiry: {info.get('expiry_time', 'No expiry')}")
+
+        # Test key handling
+        if key == "WR-TEST12345":
+            print("Test key validated successfully")
+            return jsonify({
+                'valid': True,
+                'message': 'Test key validated successfully',
+                'expiryTime': (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+            })
 
         # Check if key exists in any user's data
-        for user_info in user_data.values():
-            if user_info.get('key') == key:
+        for user_id, user_info in user_data.items():
+            stored_key = user_info.get('key', '').upper()
+            print(f"Comparing input key '{key}' with stored key '{stored_key}'")
+            
+            if stored_key == key:
                 try:
                     expiry_time = datetime.datetime.strptime(
                         user_info['expiry_time'], 
@@ -65,21 +82,29 @@ def validate_key():
                     )
                     
                     if datetime.datetime.now() < expiry_time:
+                        print(f"Valid key found for user {user_id}")
                         return jsonify({
                             'valid': True,
                             'message': 'Key validated successfully',
                             'expiryTime': user_info['expiry_time']
                         })
+                    else:
+                        print(f"Key expired for user {user_id}")
+                        return jsonify({
+                            'valid': False,
+                            'message': 'Key has expired'
+                        })
                 except Exception as e:
-                    print(f"Error processing key validation: {e}")
+                    print(f"Error processing expiry time for user {user_id}: {e}")
                     return jsonify({
                         'valid': False,
-                        'message': 'Error processing key'
-                    }), 500
+                        'message': 'Error validating key expiry'
+                    })
 
+        print("No matching key found in user data")
         return jsonify({
             'valid': False,
-            'message': 'Invalid or expired key'
+            'message': 'Invalid key'
         })
 
     except Exception as e:
@@ -89,58 +114,9 @@ def validate_key():
             'message': f'Server error occurred: {str(e)}'
         }), 500
 
-@app.route('/api/generate-key', methods=['POST'])
-def generate_trial_key():
-    try:
-        data = request.json
-        user_id = data.get('userId')
-        
-        if not user_id:
-            return jsonify({
-                'success': False,
-                'message': 'User ID required'
-            }), 400
-
-        user_data = load_user_data()
-        
-        # Initialize user if not exists
-        if str(user_id) not in user_data:
-            user_data[str(user_id)] = {
-                "verified": True,
-                "total_keys_generated": 0
-            }
-
-        # Generate new key
-        key = generate_key()
-        expiry_time = get_expiry_time()
-        
-        user_data[str(user_id)].update({
-            "key": key,
-            "expiry_time": expiry_time,
-            "total_keys_generated": user_data[str(user_id)].get("total_keys_generated", 0) + 1
-        })
-
-        # Save to file
-        with open(USER_DATA_FILE, 'w') as f:
-            json.dump(user_data, f)
-
-        return jsonify({
-            'success': True,
-            'key': key,
-            'expiryTime': expiry_time
-        })
-
-    except Exception as e:
-        print(f"Error generating key: {e}")
-        return jsonify({
-            'success': False,
-            'message': 'Error generating key'
-        }), 500
-
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'alive'})
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, port=5000)

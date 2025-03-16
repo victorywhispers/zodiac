@@ -1,22 +1,17 @@
 import { chatLimitService } from './ChatLimitService.js';
+import { db } from './Db.service.js';
 
-export class KeyValidationService {
+class KeyValidationService {
     constructor() {
-        // Set default API URL with fallback
-        this.API_URL = import.meta.env.VITE_API_URL || 'https://wormgpt-api.onrender.com';
-        this.KEY_STORAGE = 'wormgpt_access_key';
-        this.EXPIRY_STORAGE = 'wormgpt_key_expiry';
-        this.USER_ID_STORAGE = 'wormgpt_user_id';
+        this.STORAGE_KEY = 'wormgpt_access_key';
+        this.BASE_URL = process.env.NODE_ENV === 'production' 
+            ? 'https://wormgpt-backend.onrender.com'
+            : 'http://127.0.0.1:5000';
     }
 
     validateKeyFormat(key) {
-        if (!key) return false;
-        
-        // Convert to uppercase for consistent validation
-        key = key.toUpperCase();
-        
-        // Accept WR-TEST12345 and regular keys (WR-XXXXXXXXXX)
-        return key === "WR-TEST12345" || /^WR-[A-Z0-9]{10}$/.test(key);
+        const keyPattern = /^WR-[A-Z0-9]{10}$/;
+        return keyPattern.test(key.toUpperCase());
     }
 
     async validateKey(key) {
@@ -28,33 +23,26 @@ export class KeyValidationService {
                 };
             }
 
-            const response = await fetch(`${this.API_URL}/api/validate-key`, {
+            console.log('Validating key with server:', key);
+            
+            const response = await fetch(`${this.BASE_URL}/validate-key`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ key: key.toUpperCase() })
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
             const data = await response.json();
+            console.log('Server response:', data);
             
             if (data.valid) {
-                // Store key data with proper structure
                 const keyData = {
                     key: key.toUpperCase(),
                     expiryTime: data.expiryTime,
                     activatedAt: new Date().toISOString()
                 };
-                localStorage.setItem(this.KEY_STORAGE, JSON.stringify(keyData));
-                return {
-                    valid: true,
-                    message: data.message,
-                    expiryTime: data.expiryTime
-                };
+                await this.saveKeyToDatabase(keyData);
             }
             
             return data;
@@ -67,77 +55,42 @@ export class KeyValidationService {
         }
     }
 
-    async generateTrialKey() {
+    async saveKeyToDatabase(keyData) {
         try {
-            let userId = localStorage.getItem(this.USER_ID_STORAGE);
-            if (!userId) {
-                userId = 'web_' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem(this.USER_ID_STORAGE, userId);
-            }
-
-            const response = await fetch(`${this.API_URL}/api/generate-key`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userId })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to generate key');
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                localStorage.setItem(this.KEY_STORAGE, JSON.stringify({
-                    key: data.key,
-                    expiryTime: data.expiryTime,
-                    activatedAt: new Date().toISOString()
-                }));
-                return {
-                    success: true,
-                    key: data.key,
-                    expiryTime: data.expiryTime
-                };
-            }
-            return {
-                success: false,
-                message: data.message || 'Failed to generate key'
-            };
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(keyData));
+            return true;
         } catch (error) {
-            console.error('Error generating key:', error);
-            return {
-                success: false,
-                message: 'Error connecting to server'
-            };
+            console.error('Failed to save key to storage:', error);
+            return false;
         }
     }
 
-    isKeyValid() {
+    async getKeyData() {
         try {
-            const keyData = this.getKeyData();
+            const keyData = localStorage.getItem(this.STORAGE_KEY);
+            return keyData ? JSON.parse(keyData) : null;
+        } catch (error) {
+            console.error('Failed to get key data:', error);
+            return null;
+        }
+    }
+
+    async isKeyValid() {
+        try {
+            const keyData = await this.getKeyData();
             if (!keyData) return false;
 
-            const expiryTime = new Date(keyData.expiryTime);
             const now = new Date();
-            return expiryTime > now;
+            const expiryTime = new Date(keyData.expiryTime);
+            return now < expiryTime;
         } catch (error) {
             console.error('Error checking key validity:', error);
             return false;
         }
     }
 
-    getKeyData() {
-        try {
-            const data = localStorage.getItem(this.KEY_STORAGE);
-            return data ? JSON.parse(data) : null;
-        } catch {
-            return null;
-        }
-    }
-
-    getRemainingTime() {
-        const keyData = this.getKeyData();
+    async getRemainingTime() {
+        const keyData = await this.getKeyData();
         if (!keyData) return null;
 
         const now = new Date();
@@ -145,8 +98,8 @@ export class KeyValidationService {
         const diff = expiryTime - now;
 
         return {
-            hours: Math.max(0, Math.floor(diff / (1000 * 60 * 60))),
-            minutes: Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)))
+            hours: Math.floor(diff / (1000 * 60 * 60)),
+            minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
         };
     }
 }

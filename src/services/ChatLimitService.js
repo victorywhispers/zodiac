@@ -1,129 +1,80 @@
-class ChatLimitService {
+export class ChatLimitService {
     constructor() {
-        this.CHATS_PER_DAY = 10;
-        this.STORAGE_KEY = 'chat_limit_data';
-        this.BONUS_KEY = 'wormgpt_bonus_messages';
+        this.storageKey = 'chatLimits';
     }
 
-    initializeChatLimit() {
-        const keyData = JSON.parse(localStorage.getItem('wormgpt_access_key'));
-        if (!keyData) return 0;
-
-        const currentData = this.getChatLimitData();
-        
-        if (!currentData || currentData.keyExpiryTime !== keyData.expiryTime) {
-            return this.resetChatLimit(keyData.expiryTime);
+    async initializeChatLimit() {
+        const stored = localStorage.getItem(this.storageKey);
+        if (!stored) {
+            const initial = {
+                remaining: 40,
+                total: 40,
+                lastReset: new Date().toISOString()
+            };
+            localStorage.setItem(this.storageKey, JSON.stringify(initial));
+            return initial.remaining;
         }
-
-        return currentData.remainingChats;
+        await this.checkDailyReset();
+        return JSON.parse(stored).remaining;
     }
 
-    shouldReset(lastReset, keyExpiryTime) {
-        const now = new Date().getTime();
-        const expiryTime = new Date(keyExpiryTime).getTime();
+    async checkDailyReset() {
+        const limits = JSON.parse(localStorage.getItem(this.storageKey));
+        if (!limits) return;
+
+        const lastReset = new Date(limits.lastReset);
+        const now = new Date();
         
-        // Reset if current time is past expiry
-        if (now >= expiryTime) {
-            return true;
+        // Check if it's a new day
+        if (lastReset.getDate() !== now.getDate() || 
+            lastReset.getMonth() !== now.getMonth() || 
+            lastReset.getFullYear() !== now.getFullYear()) {
+            // Reset daily limit
+            limits.remaining = 40;
+            limits.total = 40;
+            limits.lastReset = now.toISOString();
+            localStorage.setItem(this.storageKey, JSON.stringify(limits));
         }
-
-        // Check if 24 hours have passed since last reset
-        const hoursSinceReset = (now - lastReset) / (1000 * 60 * 60);
-        return hoursSinceReset >= 24;
     }
 
-    resetChatLimit(keyExpiryTime) {
-        const data = {
-            remainingChats: this.CHATS_PER_DAY,
-            lastReset: new Date().getTime(),
-            keyExpiryTime: keyExpiryTime
+    async canSendMessage() {
+        await this.checkDailyReset();
+        const limits = JSON.parse(localStorage.getItem(this.storageKey));
+        return limits && limits.remaining > 0;
+    }
+
+    async decrementChatLimit() {
+        await this.checkDailyReset();
+        const limits = JSON.parse(localStorage.getItem(this.storageKey));
+        if (limits.remaining > 0) {
+            limits.remaining--;
+            localStorage.setItem(this.storageKey, JSON.stringify(limits));
+        }
+        return limits.remaining;
+    }
+
+    async getRemainingChats() {
+        await this.checkDailyReset();
+        const limits = JSON.parse(localStorage.getItem(this.storageKey));
+        return limits ? limits.remaining : 0;
+    }
+
+    async resetChatLimit() {
+        const initial = {
+            remaining: 40,
+            total: 40,
+            lastReset: new Date().toISOString()
         };
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-        return this.CHATS_PER_DAY;
+        localStorage.setItem(this.storageKey, JSON.stringify(initial));
+        return initial.remaining;
     }
 
-    getChatLimitData() {
-        try {
-            const data = localStorage.getItem(this.STORAGE_KEY);
-            if (!data) return null;
-
-            const parsedData = JSON.parse(data);
-            
-            // Check if key has expired
-            const keyData = JSON.parse(localStorage.getItem('wormgpt_access_key'));
-            if (!keyData || new Date() >= new Date(keyData.expiryTime)) {
-                localStorage.removeItem(this.STORAGE_KEY);
-                return null;
-            }
-
-            return parsedData;
-        } catch (error) {
-            console.error('Error reading chat limit data:', error);
-            return null;
+    async updateDisplay() {
+        const remaining = await this.getRemainingChats();
+        const displayElement = document.querySelector('.chat-limit-display');
+        if (displayElement) {
+            displayElement.textContent = `${remaining} messages remaining today`;
         }
-    }
-
-    decrementChat() {
-        const data = this.getChatLimitData();
-        let bonusMessages = parseInt(localStorage.getItem(this.BONUS_KEY) || '0');
-
-        // First try to use regular chats
-        if (data && data.remainingChats > 0) {
-            data.remainingChats -= 1;
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-            this.remainingChats = data.remainingChats;
-            this.updateRemainingChatsDisplay();
-            return data.remainingChats;
-        } 
-        // Then use bonus messages if available
-        else if (bonusMessages > 0) {
-            bonusMessages -= 1;
-            localStorage.setItem(this.BONUS_KEY, bonusMessages.toString());
-            // Update the display immediately
-            this.updateRemainingChatsDisplay();
-            return 0; // Return 0 for regular chats
-        }
-        return 0;
-    }
-
-    canSendMessage() {
-        const data = this.getChatLimitData();
-        const bonusMessages = parseInt(localStorage.getItem(this.BONUS_KEY) || '0');
-        return (data && data.remainingChats > 0) || bonusMessages > 0;
-    }
-
-    updateRemainingChatsDisplay() {
-        const remainingElement = document.querySelector('#remaining-chats-count');
-        const bonusElement = document.querySelector('#bonus-messages-count');
-        const bonusMessages = parseInt(localStorage.getItem(this.BONUS_KEY) || '0');
-        
-        if (remainingElement) {
-            remainingElement.textContent = `${this.remainingChats} chats remaining`;
-            
-            if (this.remainingChats <= 2) {
-                remainingElement.classList.add('warning');
-            } else {
-                remainingElement.classList.remove('warning');
-            }
-        }
-
-        // Update bonus messages display in real-time
-        if (bonusElement) {
-            bonusElement.textContent = `${bonusMessages} bonus messages`;
-            
-            // Add warning class if bonus messages are low
-            if (bonusMessages <= 2 && bonusMessages > 0) {
-                bonusElement.classList.add('warning');
-            } else {
-                bonusElement.classList.remove('warning');
-            }
-        }
-
-        // Force update both sections visibility
-        const userStats = document.querySelectorAll('.user-stats');
-        userStats.forEach(stat => {
-            stat.style.display = 'block';
-        });
     }
 }
 

@@ -21,8 +21,12 @@ services:
         value: 3.9.0
       - key: FLASK_ENV
         value: production
+      - key: USER_DATA_FILE
+        value: /data/user_data.json
+      - key: CORS_ORIGINS
+        value: https://wormgpt-frontend.onrender.com
 
-  # Telegram Bot Service (New)
+  # Telegram Bot Service
   - type: web
     name: wormgpt-keygen
     env: python
@@ -35,3 +39,9 @@ services:
         value: 3.9.0
       - key: BOT_TOKEN
         value: "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"
+      - key: CHANNEL_USERNAME
+        value: "hecabruss"
+      - key: CHANNEL_LINK
+        value: "https://t.me/hecabruss"
+      - key: USER_DATA_FILE
+        value: /data/user_data.json

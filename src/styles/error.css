@@ -1,0 +1,36 @@
+.error-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: #ff4444;
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.error-toast.warning {
+    background: #ff9800;
+}
+
+.error-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.error-toast .material-symbols-outlined {
+    font-size: 20px;
+}
+
+/* Disabled input state */
+#messageInput[contenteditable="false"] {
+    cursor: not-allowed;
+    background: rgba(0,0,0,0.05);
+}

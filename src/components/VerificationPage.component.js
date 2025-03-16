@@ -30,11 +30,10 @@ export class VerificationPage {
                 <nav class="verification-nav">
                     <div class="logo-section">
                         <div class="logo-wrapper">
-                            <div class="logo-glow" style="animation: none;"></div>
+                            <div class="logo-glow"></div>
                             <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" 
                                 alt="WormGPT Logo" 
-                                class="logo-image"
-                                style="filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(7414%) hue-rotate(359deg) brightness(94%) contrast(117%);">
+                                class="logo-image">
                         </div>
                         <span class="logo-text">WormGPT</span>
                     </div>

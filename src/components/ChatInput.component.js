@@ -3,6 +3,7 @@ import * as dbService from '../services/Db.service';
 import * as helpers from '../utils/helpers';
 import { chatLimitService } from '../services/ChatLimitService.js';
 import { keyValidationService } from '../services/KeyValidationService.js';
+import { ErrorService } from '../services/Error.service.js'; // Add this import
 
 const messageInput = document.querySelector("#messageInput");
 const sendMessageButton = document.querySelector("#btn-send");
@@ -13,10 +14,23 @@ export class ChatInput {
         this.messageInput = document.querySelector("#messageInput");
         this.sendButton = document.querySelector("#btn-send");
         this.remainingChatsElement = document.querySelector("#remaining-chats-count");
-        this.remainingChats = chatLimitService.initializeChatLimit();
-        this.updateRemainingChatsDisplay();
-        this.checkKeyValidity();
-        this.init();
+        
+        // Initialize the component
+        this.initialize();
+    }
+
+    async initialize() {
+        try {
+            // Initialize chat limits asynchronously
+            this.remainingChats = await chatLimitService.initializeChatLimit();
+            this.updateRemainingChatsDisplay();
+            this.checkKeyValidity();
+            this.init();
+        } catch (error) {
+            console.error('Failed to initialize chat input:', error);
+            this.remainingChats = 0;
+            this.updateRemainingChatsDisplay();
+        }
     }
 
     checkKeyValidity() {
@@ -38,80 +52,36 @@ export class ChatInput {
     }
 
     async handleSubmit() {
-        const sendButton = document.querySelector("#btn-send");
-        
-        if (sendButton.classList.contains('processing')) {
-            return; // Prevent multiple submissions
-        }
-
-        if (!keyValidationService.isKeyValid()) {
-            this.showCustomAlert('Please activate your access key to start chatting');
-            return;
-        }
-
-        if (!chatLimitService.canSendMessage()) {
-            this.showCustomAlert();
-            return;
-        }
-
-        const message = helpers.getEncoded(this.messageInput.innerHTML);
-        // Check if message is empty or contains only whitespace
-        if (!message || !message.trim()) {
-            return;
-        }
-
-        // Show processing state
-        sendButton.classList.add('processing');
-        sendButton.innerHTML = '<span class="material-symbols-outlined">sync</span>';
-
         try {
+            const canSend = await chatLimitService.canSendMessage();
+            if (!canSend) {
+                ErrorService.showError('Daily message limit reached. Please wait for tomorrow or upgrade your key.', 'error');
+                return;
+            }
+
+            const message = helpers.getEncoded(this.messageInput.innerHTML);
+            // Check if message is empty or contains only whitespace
+            if (!message || !message.trim()) {
+                return;
+            }
+
             this.messageInput.innerHTML = "";
             await messageService.send(message, dbService.db);
 
-            this.remainingChats = chatLimitService.decrementChat();
+            // Update the remaining chats count
+            this.remainingChats = await chatLimitService.decrementChatLimit();
             this.updateRemainingChatsDisplay();
-        } finally {
-            // Reset button state
-            sendButton.classList.remove('processing');
-            sendButton.innerHTML = '<span class="material-symbols-outlined">send</span>';
-        }
-    }
-
-    // Replace the handleRetry method with:
-    async handleRetry() {
-        const retryBtn = document.querySelector('.retry-button');
-        if (!retryBtn) return;
-        
-        try {
-            retryBtn.disabled = true;
-            retryBtn.classList.add('loading');
-            
-            // Get the last message from the chat history
-            const lastMessage = await dbService.db.messages
-                .orderBy('timestamp')
-                .last();
-                
-            if (lastMessage) {
-                await messageService.send(lastMessage.content, dbService.db);
-            }
-            
         } catch (error) {
-            console.error('Retry failed:', error);
-            this.showCustomAlert('Failed to retry message. Please try again.');
-        } finally {
-            retryBtn.disabled = false;
-            retryBtn.classList.remove('loading');
+            console.error('Error sending message:', error);
+            ErrorService.showError('Failed to send message. Please try again.', 'error');
         }
     }
 
-    // Update the logo style in showCustomAlert method:
     showCustomAlert(message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = 'custom-alert';
         alertDiv.innerHTML = `
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" 
-                 alt="WormGPT"
-                 style="filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(7414%) hue-rotate(359deg) brightness(94%) contrast(117%);">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" alt="WormGPT">
             <h3>Chat Limit Reached</h3>
             <p>${message || 'You have exhausted your daily chat limit. Please try again tomorrow.'}</p>
             <button onclick="this.parentElement.remove()">Got it</button>
