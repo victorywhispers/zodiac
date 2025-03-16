@@ -24,7 +24,10 @@ services:
       python -m pip install --upgrade pip
       pip install -r requirements.txt
       mkdir -p /data
-      cp user_data.json /data/user_data.json
+      # Copy user_data.json to the shared disk directory with debug output
+      echo "Copying user_data.json to /data"
+      cp ./user_data.json /data/user_data.json
+      ls -la /data
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: FLASK_ENV
