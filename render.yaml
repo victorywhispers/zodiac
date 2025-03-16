@@ -1,3 +1,8 @@
+disks:
+  - name: wormgpt-data
+    mountPath: /data
+    sizeGB: 1
+
 services:
   # Frontend static site
   - type: static
@@ -12,9 +17,14 @@ services:
   - type: web
     name: wormgpt-api
     env: python
+    disk:
+      name: wormgpt-data
+      mountPath: /data
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
+      mkdir -p /data
+      cp user_data.json /data/user_data.json
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: FLASK_ENV
@@ -28,9 +38,13 @@ services:
   - type: web
     name: wormgpt-keygen
     env: python
+    disk:
+      name: wormgpt-data
+      mountPath: /data
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r keygen_requirements.txt
+      mkdir -p /data
     startCommand: python KEYGEN.PY
     envVars:
       - key: PYTHON_VERSION
