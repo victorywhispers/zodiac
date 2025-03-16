@@ -1,0 +1,32 @@
+@media screen and (max-width: 768px) {
+  .verification-overlay {
+    width: 100vw;
+    height: 100vh;
+    padding: 10px;
+  }
+
+  .verification-card {
+    width: 90%;
+    max-width: none;
+    margin: 20px auto;
+  }
+
+  .key-input-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .verification-input {
+    width: 100%;
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .verify-button {
+    width: 100%;
+  }
+
+  .nav-buttons {
+    gap: 8px;
+  }
+}
