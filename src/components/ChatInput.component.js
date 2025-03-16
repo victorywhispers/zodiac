@@ -77,7 +77,7 @@ export class ChatInput {
         }
     }
 
-    // Add this method to handle retries
+    // Replace the handleRetry method with:
     async handleRetry() {
         const retryBtn = document.querySelector('.retry-button');
         if (!retryBtn) return;
@@ -85,29 +85,33 @@ export class ChatInput {
         try {
             retryBtn.disabled = true;
             retryBtn.classList.add('loading');
-            await keyValidationService.validateKey(localStorage.getItem('accessKey'));
-            await this.resendMessage();
+            
+            // Get the last message from the chat history
+            const lastMessage = await dbService.db.messages
+                .orderBy('timestamp')
+                .last();
+                
+            if (lastMessage) {
+                await messageService.send(lastMessage.content, dbService.db);
+            }
+            
         } catch (error) {
             console.error('Retry failed:', error);
-            const statusElement = document.querySelector('.verification-status');
-            if (statusElement) {
-                statusElement.innerHTML = `
-                    <div class="error-message">
-                        <span class="material-symbols-outlined">error</span>
-                        Failed to retry. Please try again.
-                    </div>`;
-            }
+            this.showCustomAlert('Failed to retry message. Please try again.');
         } finally {
             retryBtn.disabled = false;
             retryBtn.classList.remove('loading');
         }
     }
 
+    // Update the logo style in showCustomAlert method:
     showCustomAlert(message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = 'custom-alert';
         alertDiv.innerHTML = `
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" alt="WormGPT">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" 
+                 alt="WormGPT"
+                 style="filter: brightness(0) saturate(100%) invert(21%) sepia(100%) saturate(7414%) hue-rotate(359deg) brightness(94%) contrast(117%);">
             <h3>Chat Limit Reached</h3>
             <p>${message || 'You have exhausted your daily chat limit. Please try again tomorrow.'}</p>
             <button onclick="this.parentElement.remove()">Got it</button>
