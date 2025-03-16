@@ -53,11 +53,21 @@ else:
 # Function to save user data
 def save_user_data():
     try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+        
+        # Save with proper permissions
         with open(USER_DATA_FILE, 'w') as f:
             json.dump(user_data, f, indent=2)
-        print(f"Data saved to {USER_DATA_FILE}")
+        
+        # Set file permissions to be readable by both services
+        os.chmod(USER_DATA_FILE, 0o666)
+        
+        print(f"Data saved successfully to {USER_DATA_FILE}")
+        return True
     except Exception as e:
         print(f"Error saving user data: {e}")
+        return False
 
 # Generate a random key
 def generate_key():
@@ -431,7 +441,22 @@ async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYP
         "expiry_time": expiry_time,
         "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1
     })
-    save_user_data()  # This saves to user_data.json
+    
+    # Debug logging
+    print(f"Saving new key to {USER_DATA_FILE}")
+    print(f"Key: {key}")
+    print(f"Expiry: {expiry_time}")
+    
+    # Save immediately to ensure persistence
+    save_user_data()
+    
+    # Verify save was successful
+    try:
+        with open(USER_DATA_FILE, 'r') as f:
+            saved_data = json.load(f)
+            print("Verification - saved data:", json.dumps(saved_data, indent=2))
+    except Exception as e:
+        print(f"Error verifying save: {e}")
     
     # Update loading message to show success
     await loading_message.edit_text("✅ Key generated successfully!")
