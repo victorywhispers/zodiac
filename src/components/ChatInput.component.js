@@ -77,6 +77,32 @@ export class ChatInput {
         }
     }
 
+    // Add this method to handle retries
+    async handleRetry() {
+        const retryBtn = document.querySelector('.retry-button');
+        if (!retryBtn) return;
+        
+        try {
+            retryBtn.disabled = true;
+            retryBtn.classList.add('loading');
+            await keyValidationService.validateKey(localStorage.getItem('accessKey'));
+            await this.resendMessage();
+        } catch (error) {
+            console.error('Retry failed:', error);
+            const statusElement = document.querySelector('.verification-status');
+            if (statusElement) {
+                statusElement.innerHTML = `
+                    <div class="error-message">
+                        <span class="material-symbols-outlined">error</span>
+                        Failed to retry. Please try again.
+                    </div>`;
+            }
+        } finally {
+            retryBtn.disabled = false;
+            retryBtn.classList.remove('loading');
+        }
+    }
+
     showCustomAlert(message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = 'custom-alert';
