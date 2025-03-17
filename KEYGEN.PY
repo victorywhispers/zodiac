@@ -25,7 +25,7 @@ logging.basicConfig(
 PORT = int(os.environ.get('PORT', 8080))
 
 # Bot configuration
-BOT_TOKEN = "7693246799:AAF30PjRnkpRDowNL58IDrRdW7ALs2VLTGA"  # Replace with your bot token
+BOT_TOKEN = "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
@@ -41,7 +41,7 @@ WORMGPT_IMAGE = "https://i.imgur.com/Bcthuqf.jpeg"  # Replace with direct image 
 LIFETIME_KEY_IMAGE = "https://i.imgur.com/JW9CnYF.jpeg"  # Replace with direct image URL
 
 # User data storage file
-USER_DATA_FILE = os.getenv('USER_DATA_FILE', 'user_data.json')
+USER_DATA_FILE = os.getenv('USER_DATA_FILE', '/opt/render/project/src/user_data.json')
 
 # Create or load user data
 if os.path.exists(USER_DATA_FILE):
@@ -53,16 +53,10 @@ else:
 # Function to save user data
 def save_user_data():
     try:
-        file_path = os.getenv('USER_DATA_FILE', 'user_data.json')
-        print(f"Saving to: {file_path}")
-        
-        # Create directory if needed
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        
-        with open(file_path, 'w') as f:
+        print(f"Saving to: {USER_DATA_FILE}")
+        with open(USER_DATA_FILE, 'w') as f:
             json.dump(user_data, f, indent=2)
-        
-        print(f"Data saved successfully to {file_path}")
+        print(f"Data saved successfully to {USER_DATA_FILE}")
         return True
     except Exception as e:
         print(f"Error saving user data: {e}")
