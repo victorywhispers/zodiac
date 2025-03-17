@@ -278,7 +278,7 @@ form {
 
 .message-container::before {
     content: '';
-    position: fixed;
+    position: absolute; /* Change from fixed to absolute */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -292,7 +292,6 @@ form {
     pointer-events: none;
     z-index: 0;
     filter: brightness(1.5) contrast(1.2);
-    /* Remove the animation */
 }
 
 .message-container::after {
@@ -1811,7 +1810,9 @@ textarea:focus {
     .message-container::before {
         width: 400px; /* Adjusted for mobile */
         height: 400px;
-        opacity: 0.06;
+        position: fixed; /* Keep fixed on mobile for better performance */
+        background-attachment: fixed; /* Add this for smoother scrolling */
+        transform: translate(-50%, -50%) scale(0.8); /* Slightly smaller scale */
     }
 }
 
