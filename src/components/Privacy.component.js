@@ -32,11 +32,7 @@ export class PrivacyPolicy {
                         <ul>
                             <li>We do not sell or share your data with third parties</li>
                             <li>We employ industry-standard security measures</li>
-                            <li>Your data is used only to provide and improve our services</li>
                         </ul>
-
-                        <h3>Contact</h3>
-                        <p>For questions or concerns about your privacy, contact @Mesosig on Telegram.</p>
                     </div>
                 </div>
             </div>
