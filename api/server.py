@@ -37,24 +37,36 @@ def load_user_data():
             os.path.join(os.getcwd(), 'user_data.json')  # API directory
         ]
         
-        # Find first existing file
+        data = None
+        found_path = None
+        
+        # Find first readable file
         for path in possible_paths:
-            if os.path.exists(path):
-                print(f"Found user_data.json at: {path}")
+            if os.path.exists(path) and os.access(path, os.R_OK):
+                print(f"Found readable user_data.json at: {path}")
                 with open(path, 'r') as f:
                     data = json.load(f)
+                found_path = path
+                break
+        
+        if data is None:
+            print("No readable user_data.json found")
+            return {}
+            
+        # Try to copy to preferred location if needed and possible
+        if found_path != USER_DATA_FILE:
+            try:
+                target_dir = os.path.dirname(USER_DATA_FILE)
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir, mode=0o777, exist_ok=True)
+                with open(USER_DATA_FILE, 'w') as f:
+                    json.dump(data, f, indent=2)
+                os.chmod(USER_DATA_FILE, 0o666)
+                print(f"Successfully copied data to {USER_DATA_FILE}")
+            except Exception as e:
+                print(f"Warning: Failed to copy to {USER_DATA_FILE}: {e}")
                 
-                # If file isn't in the right place, copy it
-                if path != USER_DATA_FILE:
-                    print(f"Copying file to correct location: {USER_DATA_FILE}")
-                    os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
-                    with open(USER_DATA_FILE, 'w') as f:
-                        json.dump(data, f, indent=2)
-                    
-                return data
-                
-        print("No user_data.json found in any location")
-        return {}
+        return data
             
     except Exception as e:
         print(f"Error loading user data: {str(e)}")
@@ -159,6 +171,12 @@ def health_check():
 @app.route('/system-check', methods=['GET'])
 def system_check():
     try:
+        # Check directory permissions
+        data_dir = os.path.dirname(USER_DATA_FILE)
+        dir_exists = os.path.exists(data_dir)
+        dir_writable = os.access(data_dir, os.W_OK) if dir_exists else False
+        dir_readable = os.access(data_dir, os.R_OK) if dir_exists else False
+        
         user_data = load_user_data()
         return jsonify({
             'status': 'healthy',
@@ -166,7 +184,14 @@ def system_check():
             'file_path': USER_DATA_FILE,
             'user_count': len(user_data),
             'readable': os.access(USER_DATA_FILE, os.R_OK),
-            'writable': os.access(USER_DATA_FILE, os.W_OK)
+            'writable': os.access(USER_DATA_FILE, os.W_OK),
+            'directory': {
+                'path': data_dir,
+                'exists': dir_exists,
+                'readable': dir_readable,
+                'writable': dir_writable,
+                'permissions': oct(os.stat(data_dir).st_mode)[-3:] if dir_exists else 'N/A'
+            }
         })
     except Exception as e:
         return jsonify({
