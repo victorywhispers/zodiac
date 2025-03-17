@@ -19,8 +19,8 @@ CORS(app, resources={
     }
 })
 
-# Use environment variables for production
-USER_DATA_FILE = os.getenv('USER_DATA_FILE', '/data/user_data.json')
+# Update file path handling
+USER_DATA_FILE = os.getenv('USER_DATA_FILE', os.path.join(os.getcwd(), '..', 'user_data.json'))
 print(f"Looking for user_data.json at: {USER_DATA_FILE}")
 
 def load_user_data():
@@ -29,35 +29,25 @@ def load_user_data():
         print(f"Current working directory: {os.getcwd()}")
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
         
-        # Try multiple locations, but prioritize /data directory
-        possible_paths = [
-            '/data/user_data.json',  # Shared data directory
-            os.path.join(os.getcwd(), '..', 'user_data.json'),  # Project root
-            os.path.join(os.getcwd(), 'user_data.json')  # API directory
-        ]
+        if os.path.exists(USER_DATA_FILE):
+            try:
+                with open(USER_DATA_FILE, 'r') as f:
+                    data = json.load(f)
+                print(f"Successfully loaded data from: {USER_DATA_FILE}")
+                return data
+            except Exception as e:
+                print(f"Warning: Could not read {USER_DATA_FILE}: {e}")
         
-        for path in possible_paths:
-            if os.path.exists(path) and os.access(path, os.R_OK):
-                try:
-                    with open(path, 'r') as f:
-                        data = json.load(f)
-                    print(f"Successfully loaded data from: {path}")
-                    
-                    # If not in shared directory, try to copy it there
-                    if path != '/data/user_data.json':
-                        try:
-                            os.makedirs('/data', exist_ok=True)
-                            with open('/data/user_data.json', 'w') as f:
-                                json.dump(data, f, indent=2)
-                            os.chmod('/data/user_data.json', 0o666)
-                            print("Copied data to shared directory")
-                        except Exception as e:
-                            print(f"Warning: Could not copy to shared directory: {e}")
-                            
-                    return data
-                except Exception as e:
-                    print(f"Warning: Could not read {path}: {e}")
-                    continue
+        # Fallback to project root
+        root_file = os.path.join(os.getcwd(), '..', 'user_data.json')
+        if os.path.exists(root_file):
+            try:
+                with open(root_file, 'r') as f:
+                    data = json.load(f)
+                print(f"Successfully loaded data from: {root_file}")
+                return data
+            except Exception as e:
+                print(f"Warning: Could not read {root_file}: {e}")
         
         print("No readable user_data.json found")
         return {}
