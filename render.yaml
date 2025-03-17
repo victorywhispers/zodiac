@@ -26,7 +26,9 @@ services:
       mkdir -p /data
       cp user_data.json /data/user_data.json || echo "No initial user_data.json"
       chmod 666 /data/user_data.json || true
-    startCommand: cd api && gunicorn server:app
+    startCommand: cd api && gunicorn server:app --timeout 120 --keep-alive 65 --workers 2
+    healthCheckPath: /health
+    healthCheckTimeout: 60
     envVars:
       - key: USER_DATA_FILE
         value: /data/user_data.json
@@ -44,15 +46,5 @@ services:
       mkdir -p /data
     startCommand: python KEYGEN.PY
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.9.0
-      - key: BOT_TOKEN
-        value: "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"
-      - key: CHANNEL_USERNAME
-        value: "hecabruss"
-      - key: CHANNEL_LINK
-        value: "https://t.me/hecabruss"
       - key: USER_DATA_FILE
         value: /data/user_data.json
-      - key: PORT
-        value: 8080
