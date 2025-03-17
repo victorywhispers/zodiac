@@ -41,7 +41,9 @@ services:
   - type: web
     name: wormgpt-api
     env: python
-    buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
