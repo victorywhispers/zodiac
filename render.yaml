@@ -49,20 +49,19 @@ services:
       - key: USER_DATA_FILE
         value: /data/user_data.json
 
-  # Web Bot Service
+   # Telegram Bot Service  
   - type: web
-    name: wormgpt-webbot
+    name: wormgpt-telegram
     env: python
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-    startCommand: gunicorn WEBBOT:app --bind 0.0.0.0:$PORT --worker-class sync --workers 1 --threads 8 --timeout 0
-    autoDeploy: true
+    startCommand: python KEYGEN.PY
     envVars:
       - key: BOT_TOKEN
-        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
-      - key: WEBAPP_URL
-        value: "https://wormgpt-frontend.onrender.com"
+        value: "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"
+      - key: USER_DATA_FILE
+        value: "/data/user_data.json"
       - key: PORT
         value: "10000"
     healthCheckPath: /health
