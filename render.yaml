@@ -23,8 +23,8 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r keygen_requirements.txt
-      sudo chmod 777 /data
-      sudo chmod 666 /data/user_data.json
+      chmod -R 755 /data
+      chown -R 1000:1000 /data
     startCommand: python KEYGEN.PY
     envVars:
       - key: PYTHON_VERSION
@@ -50,15 +50,11 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-      # Fix permissions
-      sudo mkdir -p /data
-      sudo chown render:render /data
-      sudo chmod 777 /data
-      # Copy user data file
+      # Set up data directory with correct permissions
+      mkdir -p /data
       cp user_data.json /data/user_data.json || echo "Failed to copy user_data.json"
-      sudo chmod 666 /data/user_data.json
-      # Debug output
-      ls -la /data
+      chmod -R 755 /data
+      chown -R 1000:1000 /data
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
