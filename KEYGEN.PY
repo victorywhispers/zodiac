@@ -53,18 +53,15 @@ else:
 # Function to save user data
 def save_user_data():
     try:
-        data_dir = '/data'
-        file_path = os.path.join(data_dir, 'user_data.json')
+        file_path = os.getenv('USER_DATA_FILE', 'user_data.json')
+        print(f"Saving to: {file_path}")
         
-        # Ensure directory exists
-        os.makedirs(data_dir, exist_ok=True)
+        # Create directory if needed
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         
-        # Save data
         with open(file_path, 'w') as f:
             json.dump(user_data, f, indent=2)
         
-        # Set permissions
-        os.chmod(file_path, 0o666)
         print(f"Data saved successfully to {file_path}")
         return True
     except Exception as e:
