@@ -25,15 +25,23 @@ print(f"Looking for user_data.json at: {USER_DATA_FILE}")
 
 def load_user_data():
     try:
+        print(f"\n=== Debug Info ===")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
+        print(f"File exists: {os.path.exists(USER_DATA_FILE)}")
+        
         if not os.path.exists(USER_DATA_FILE):
             print(f"user_data.json not found at: {USER_DATA_FILE}")
             return {}
+            
         with open(USER_DATA_FILE, 'r') as f:
             data = json.load(f)
-            print("Loaded user data:", json.dumps(data, indent=2))
+            print("\nLoaded user data:")
+            print(json.dumps(data, indent=2))
             return data
     except Exception as e:
-        print(f"Error loading user data: {e}")
+        print(f"Error loading user data: {str(e)}")
+        print(f"File permissions: {oct(os.stat(USER_DATA_FILE).st_mode)[-3:]}")
         return {}
 
 @app.route('/')
