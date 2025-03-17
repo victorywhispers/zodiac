@@ -25,7 +25,9 @@ export async function insertMessage(sender, msg, selectedPersonalityTitle = null
             <div class="message-text"></div>
         `;
         if (!netStream && msg) {
-            newMessage.querySelector('.message-text').innerHTML = marked.parse(msg);
+            const messageText = newMessage.querySelector('.message-text');
+            messageText.innerHTML = marked.parse(msg);
+            helpers.addCopyButtons(); // Add copy buttons after parsing markdown
         }
         return newMessage;
     } else {
