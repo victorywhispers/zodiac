@@ -21,12 +21,8 @@ export class TasksComponent {
         await this.updateBonusDisplay();
 
         taskButton.addEventListener('click', async (e) => {
-            e.preventDefault();
+            // Don't prevent default - let the link open
             
-            // Open bot link in new tab and remove onclick="return false"
-            const botUrl = 'https://t.me/Get_Chatgpt2Bot?start=7903500450';
-            window.open(botUrl, '_blank').focus();
-
             const timerContainer = document.querySelector('.task-timer');
             const timerElement = document.getElementById('task1-timer');
             
@@ -42,7 +38,6 @@ export class TasksComponent {
                 
                 if (timeLeft <= 0) {
                     clearInterval(timer);
-                    // Complete task and update bonus messages
                     await this.tasksService.completeTask('task1');
                     await this.updateBonusDisplay();
                 }
