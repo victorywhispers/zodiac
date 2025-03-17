@@ -2,24 +2,8 @@ import { ErrorService } from './Error.service.js';
 
 export class TasksService {
     constructor() {
-        this.STORAGE_KEY = 'wormgpt_tasks';
-        this.BONUS_STORAGE_KEY = 'wormgpt_bonus_messages';
-        this.initializeTasks();
-    }
-
-    initializeTasks() {
-        const tasks = this.getTasks();
-        if (!tasks) {
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify({}));
-        }
-        
-        const bonusMessages = this.getBonusMessages();
-        if (bonusMessages === null) {
-            localStorage.setItem(this.BONUS_STORAGE_KEY, '0');
-        }
-
-        // Check for completed tasks and hide them
-        this.hideCompletedTasks();
+        this.STORAGE_KEY = 'tasks';
+        this.BONUS_STORAGE_KEY = 'bonusMessages';
     }
 
     getTasks() {
@@ -36,30 +20,25 @@ export class TasksService {
     }
 
     getBonusMessages() {
-        return parseInt(localStorage.getItem(this.BONUS_STORAGE_KEY) || '0');
+        const bonus = localStorage.getItem(this.BONUS_STORAGE_KEY);
+        return parseInt(bonus || '0', 10);
     }
 
     addBonusMessages(count) {
         const current = this.getBonusMessages();
-        localStorage.setItem(this.BONUS_STORAGE_KEY, (current + count).toString());
-    }
-
-    hideCompletedTasks() {
-        const tasks = this.getTasks();
-        Object.entries(tasks).forEach(([taskId, task]) => {
-            if (task.completed) {
-                const taskElement = document.getElementById(taskId);
-                if (taskElement) {
-                    taskElement.style.display = 'none';
-                }
-            }
-        });
+        const newTotal = current + count;
+        localStorage.setItem(this.BONUS_STORAGE_KEY, newTotal.toString());
+        
+        // Update display immediately
+        const bonusElement = document.getElementById('bonus-messages-count');
+        if (bonusElement) {
+            bonusElement.textContent = `${newTotal} bonus messages`;
+        }
+        return newTotal;
     }
 
     async completeTask(taskId) {
         const tasks = this.getTasks();
-        
-        // Check if task is already completed
         if (tasks[taskId]?.completed) {
             return false;
         }
@@ -73,7 +52,7 @@ export class TasksService {
         // Add bonus messages for task1
         if (taskId === 'task1') {
             this.addBonusMessages(20);
-            const taskCard = document.getElementById('task1');
+            const taskCard = document.getElementById(taskId);
             if (taskCard) {
                 const taskContent = taskCard.querySelector('.task-content');
                 if (taskContent) {
@@ -84,12 +63,9 @@ export class TasksService {
                         </div>
                     `;
                 }
-                
                 // Hide task after delay
                 setTimeout(() => {
-                    if (taskCard) {
-                        taskCard.style.display = 'none';
-                    }
+                    taskCard.style.display = 'none';
                 }, 3000);
             }
             return true;
