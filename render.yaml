@@ -33,9 +33,9 @@ services:
       - key: USER_DATA_FILE
         value: /data/user_data.json
 
-  # Existing Key Generator Service
+  # Key Generator Service
   - type: web
-    name: wormgpt-keygen
+    name: wormgpt-keygen  
     env: python
     disk:
       name: wormgpt-data
@@ -44,43 +44,12 @@ services:
       python -m pip install --upgrade pip
       pip install -r keygen_requirements.txt
       mkdir -p /data
-    startCommand: python KEYGEN.PY
+    startCommand: gunicorn -b 0.0.0.0:$PORT -w 1 --timeout 0 KEYGEN:web_app
     envVars:
       - key: USER_DATA_FILE
         value: /data/user_data.json
-
-   # Telegram Bot Service  
-  - type: web
-    name: wormgpt-telegram
-    env: python
-    buildCommand: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-    startCommand: python KEYGEN.PY
-    envVars:
-      - key: BOT_TOKEN
+      - key: BOT_TOKEN 
         value: "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"
-      - key: USER_DATA_FILE
-        value: "/data/user_data.json"
-      - key: PORT
-        value: "10000"
-    healthCheckPath: /health
-    healthCheckTimeout: 60
-
-  # Telegram Bot Service
-  - type: web
-    name: wormgpt-telegram
-    env: python
-    buildCommand: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-    # Changed startCommand to use direct Python execution
-    startCommand: python WEBBOT.PY
-    envVars:
-      - key: BOT_TOKEN
-        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
-      - key: WEBAPP_URL
-        value: "https://wormgpt-frontend.onrender.com"
       - key: PORT
         value: "10000"
     healthCheckPath: /health
