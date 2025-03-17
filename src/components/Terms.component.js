@@ -34,9 +34,6 @@ export class TermsAndConditions {
                             <li>Do not use the service for illegal activities</li>
                             <li>Do not share or resell access keys</li>
                         </ul>
-
-                        <h3>Updates</h3>
-                        <p>Terms may be updated without notice. Continued use constitutes acceptance.</p>
                     </div>
                 </div>
             </div>
