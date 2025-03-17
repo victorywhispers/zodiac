@@ -138,5 +138,23 @@ def validate_key():
 def health_check():
     return jsonify({'status': 'alive'})
 
+@app.route('/system-check', methods=['GET'])
+def system_check():
+    try:
+        user_data = load_user_data()
+        return jsonify({
+            'status': 'healthy',
+            'file_exists': os.path.exists(USER_DATA_FILE),
+            'file_path': USER_DATA_FILE,
+            'user_count': len(user_data),
+            'readable': os.access(USER_DATA_FILE, os.R_OK),
+            'writable': os.access(USER_DATA_FILE, os.W_OK)
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
