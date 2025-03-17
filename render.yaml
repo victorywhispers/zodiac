@@ -17,15 +17,12 @@ services:
   - type: web
     name: wormgpt-keygen
     disk:
-      name: wormgpt-data  # Use same disk as API
+      name: shared-data  # Use the same disk name
       mountPath: /data
     env: python
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r keygen_requirements.txt
-      chmod -R 755 /data
-      chown -R 1000:1000 /data
-    startCommand: python KEYGEN.PY
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -44,7 +41,7 @@ services:
   - type: web
     name: wormgpt-api
     disk:
-      name: wormgpt-data
+      name: shared-data
       mountPath: /data
     env: python
     buildCommand: |
@@ -53,8 +50,7 @@ services:
       # Set up data directory with correct permissions
       mkdir -p /data
       cp user_data.json /data/user_data.json || echo "Failed to copy user_data.json"
-      chmod -R 755 /data
-      chown -R 1000:1000 /data
+      chmod -R 777 /data
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
