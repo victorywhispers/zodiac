@@ -87,7 +87,9 @@ export class TasksService {
                 
                 // Hide task after delay
                 setTimeout(() => {
-                    taskCard.style.display = 'none';
+                    if (taskCard) {
+                        taskCard.style.display = 'none';
+                    }
                 }, 3000);
             }
             return true;
