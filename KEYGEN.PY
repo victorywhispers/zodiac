@@ -11,6 +11,19 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
+# Add these new imports
+from aiohttp import web
+import logging
+
+# Configure logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
+
+# Get port from environment variable
+PORT = int(os.environ.get('PORT', 8080))
+
 # Bot configuration
 BOT_TOKEN = "8149610025:AAF-vNIJOMBeJHJpPZmfR6SW7k3Jmy3dJbY"  # Replace with your bot token
 
@@ -28,7 +41,7 @@ WORMGPT_IMAGE = "https://i.imgur.com/Bcthuqf.jpeg"  # Replace with direct image 
 LIFETIME_KEY_IMAGE = "https://i.imgur.com/JW9CnYF.jpeg"  # Replace with direct image URL
 
 # User data storage file
-USER_DATA_FILE = "user_data.json"
+USER_DATA_FILE = os.getenv('USER_DATA_FILE', 'user_data.json')
 
 # Create or load user data
 if os.path.exists(USER_DATA_FILE):
@@ -39,8 +52,22 @@ else:
 
 # Function to save user data
 def save_user_data():
-    with open(USER_DATA_FILE, 'w') as f:
-        json.dump(user_data, f)
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+        
+        # Save with proper permissions
+        with open(USER_DATA_FILE, 'w') as f:
+            json.dump(user_data, f, indent=2)
+        
+        # Set file permissions to be readable by both services
+        os.chmod(USER_DATA_FILE, 0o666)
+        
+        print(f"Data saved successfully to {USER_DATA_FILE}")
+        return True
+    except Exception as e:
+        print(f"Error saving user data: {e}")
+        return False
 
 # Generate a random key
 def generate_key():
@@ -414,7 +441,22 @@ async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYP
         "expiry_time": expiry_time,
         "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1
     })
-    save_user_data()  # This saves to user_data.json
+    
+    # Debug logging
+    print(f"Saving new key to {USER_DATA_FILE}")
+    print(f"Key: {key}")
+    print(f"Expiry: {expiry_time}")
+    
+    # Save immediately to ensure persistence
+    save_user_data()
+    
+    # Verify save was successful
+    try:
+        with open(USER_DATA_FILE, 'r') as f:
+            saved_data = json.load(f)
+            print("Verification - saved data:", json.dumps(saved_data, indent=2))
+    except Exception as e:
+        print(f"Error verifying save: {e}")
     
     # Update loading message to show success
     await loading_message.edit_text("✅ Key generated successfully!")
@@ -671,6 +713,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Redirect users to the menu when they send text messages
     await start_command(update, context)
 
+async def web_server():
+    app = web.Application()
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', PORT)
+    await site.start()
+    logging.info(f"Web server started on port {PORT}")
+
 def main():
     # Create the Application
     application = Application.builder().token(BOT_TOKEN).build()
@@ -680,10 +730,22 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Start the Bot
+    # Start the web server alongside the bot
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES,
+        drop_pending_updates=True,
+        close_loop=False
+    )
+    
+    # Start web server
+    asyncio.get_event_loop().create_task(web_server())
+    
+    # Keep the process running
     print("Bot is running...")
-    application.run_polling()
+    try:
+        asyncio.get_event_loop().run_forever()
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == "__main__":
     main()
-
