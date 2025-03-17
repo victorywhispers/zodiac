@@ -28,50 +28,53 @@ def load_user_data():
         print(f"\n=== Debug Info ===")
         print(f"Current working directory: {os.getcwd()}")
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
-        print(f"File exists: {os.path.exists(USER_DATA_FILE)}")
         
-        # Try multiple locations for the file
+        # Try to fix permissions
+        data_dir = os.path.dirname(USER_DATA_FILE)
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir, mode=0o777, exist_ok=True)
+            print(f"Created directory: {data_dir}")
+            
+        if os.path.exists(USER_DATA_FILE):
+            os.chmod(USER_DATA_FILE, 0o666)
+            print(f"Updated permissions for: {USER_DATA_FILE}")
+        
         possible_paths = [
             USER_DATA_FILE,  # /data/user_data.json
             os.path.join(os.getcwd(), '..', 'user_data.json'),  # Project root
             os.path.join(os.getcwd(), 'user_data.json')  # API directory
         ]
         
-        data = None
-        found_path = None
-        
         # Find first readable file
         for path in possible_paths:
-            if os.path.exists(path) and os.access(path, os.R_OK):
-                print(f"Found readable user_data.json at: {path}")
-                with open(path, 'r') as f:
-                    data = json.load(f)
-                found_path = path
-                break
+            if os.path.exists(path):
+                try:
+                    with open(path, 'r') as f:
+                        data = json.load(f)
+                    print(f"Successfully loaded data from: {path}")
+                    
+                    # If not in preferred location, try to copy
+                    if path != USER_DATA_FILE:
+                        try:
+                            os.makedirs(data_dir, mode=0o777, exist_ok=True)
+                            with open(USER_DATA_FILE, 'w') as f:
+                                json.dump(data, f, indent=2)
+                            os.chmod(USER_DATA_FILE, 0o666)
+                            print(f"Copied data to preferred location: {USER_DATA_FILE}")
+                        except Exception as e:
+                            print(f"Warning: Could not copy to preferred location: {e}")
+                            
+                    return data
+                except Exception as e:
+                    print(f"Warning: Could not read {path}: {e}")
+                    continue
         
-        if data is None:
-            print("No readable user_data.json found")
-            return {}
-            
-        # Try to copy to preferred location if needed and possible
-        if found_path != USER_DATA_FILE:
-            try:
-                target_dir = os.path.dirname(USER_DATA_FILE)
-                if not os.path.exists(target_dir):
-                    os.makedirs(target_dir, mode=0o777, exist_ok=True)
-                with open(USER_DATA_FILE, 'w') as f:
-                    json.dump(data, f, indent=2)
-                os.chmod(USER_DATA_FILE, 0o666)
-                print(f"Successfully copied data to {USER_DATA_FILE}")
-            except Exception as e:
-                print(f"Warning: Failed to copy to {USER_DATA_FILE}: {e}")
-                
-        return data
+        print("No readable user_data.json found")
+        return {}
             
     except Exception as e:
-        print(f"Error loading user data: {str(e)}")
+        print(f"Error in load_user_data: {str(e)}")
         print(f"File permissions: {oct(os.stat(USER_DATA_FILE).st_mode)[-3:] if os.path.exists(USER_DATA_FILE) else 'N/A'}")
-        print(f"Directory contents: {os.listdir(os.path.dirname(USER_DATA_FILE)) if os.path.exists(os.path.dirname(USER_DATA_FILE)) else 'N/A'}")
         return {}
 
 @app.route('/')
