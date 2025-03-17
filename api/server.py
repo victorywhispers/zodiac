@@ -20,7 +20,7 @@ CORS(app, resources={
 })
 
 # Use environment variables for production
-USER_DATA_FILE = os.getenv('USER_DATA_FILE', os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'user_data.json')))
+USER_DATA_FILE = os.getenv('USER_DATA_FILE', '/data/user_data.json')
 print(f"Looking for user_data.json at: {USER_DATA_FILE}")
 
 def load_user_data():
@@ -29,6 +29,8 @@ def load_user_data():
         print(f"Current working directory: {os.getcwd()}")
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
         print(f"File exists: {os.path.exists(USER_DATA_FILE)}")
+        print(f"File size: {os.path.getsize(USER_DATA_FILE)}")
+        print(f"Last modified: {datetime.datetime.fromtimestamp(os.path.getmtime(USER_DATA_FILE))}")
         
         if not os.path.exists(USER_DATA_FILE):
             print(f"user_data.json not found at: {USER_DATA_FILE}")
