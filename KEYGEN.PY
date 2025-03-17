@@ -25,7 +25,7 @@ logging.basicConfig(
 PORT = int(os.environ.get('PORT', 8080))
 
 # Bot configuration
-BOT_TOKEN = "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"  # Replace with your bot token
+BOT_TOKEN = "8149610025:AAF-vNIJOMBeJHJpPZmfR6SW7k3Jmy3dJbY"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
