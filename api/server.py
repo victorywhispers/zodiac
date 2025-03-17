@@ -29,9 +29,9 @@ def load_user_data():
         print(f"Current working directory: {os.getcwd()}")
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
         
-        # Try multiple locations
+        # Try multiple locations, but prioritize /data directory
         possible_paths = [
-            USER_DATA_FILE,  # /data/user_data.json
+            '/data/user_data.json',  # Shared data directory
             os.path.join(os.getcwd(), '..', 'user_data.json'),  # Project root
             os.path.join(os.getcwd(), 'user_data.json')  # API directory
         ]
@@ -42,6 +42,18 @@ def load_user_data():
                     with open(path, 'r') as f:
                         data = json.load(f)
                     print(f"Successfully loaded data from: {path}")
+                    
+                    # If not in shared directory, try to copy it there
+                    if path != '/data/user_data.json':
+                        try:
+                            os.makedirs('/data', exist_ok=True)
+                            with open('/data/user_data.json', 'w') as f:
+                                json.dump(data, f, indent=2)
+                            os.chmod('/data/user_data.json', 0o666)
+                            print("Copied data to shared directory")
+                        except Exception as e:
+                            print(f"Warning: Could not copy to shared directory: {e}")
+                            
                     return data
                 except Exception as e:
                     print(f"Warning: Could not read {path}: {e}")
