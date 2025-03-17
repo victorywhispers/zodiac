@@ -409,57 +409,105 @@ async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYP
     user_id = update.callback_query.from_user.id
     user_data_entry = get_user_data(user_id)
     
+    # Check channel membership
+    in_channel = await check_channel_membership(context.bot, user_id)
+    if not in_channel:
+        user_data_entry["verified"] = False
+        save_user_data()
+        await show_verification_page(update, context)
+        return
+    
+    # Show loading message
+    loading_message = await update.callback_query.message.reply_text("🔄 Initializing key generation...")
+    
     try:
-        # Generate the key
-        key = generate_key()
-        expiry_time = get_expiry_time()
+        # Animate loading
+        loading_frames = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]
+        for i in range(5):  # Reduced iterations for faster response
+            await loading_message.edit_text(f"🔄 Generating your key... {loading_frames[i % len(loading_frames)]}")
+            await asyncio.sleep(0.5)  # Increased delay for better visibility
         
-        # Store the key and expiry time
+        # Generate and format key
+        key = "WR-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+        expiry_time = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Update user data
         user_data_entry.update({
             "key": key,
             "expiry_time": expiry_time,
             "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1
         })
         
-        # Debug logging
-        print(f"Saving new key to {USER_DATA_FILE}")
-        print(f"Key: {key}")
-        print(f"Expiry: {expiry_time}")
-        
-        # Save to shared volume
-        success = save_user_data()
-        if not success:
+        # Save data immediately
+        if not save_user_data():
             raise Exception("Failed to save user data")
             
         # Verify save was successful
+        saved_data = {}
         try:
             with open(USER_DATA_FILE, 'r') as f:
                 saved_data = json.load(f)
-                print("Verification - saved data:", json.dumps(saved_data, indent=2))
+                if str(user_id) not in saved_data or saved_data[str(user_id)]["key"] != key:
+                    raise Exception("Verification failed")
         except Exception as e:
-            print(f"Error verifying save: {e}")
-            
-        # Update loading message to show success
+            print(f"Verification error: {e}")
+            raise Exception("Failed to verify saved data")
+
+        # Show success message
         await loading_message.edit_text("✅ Key generated successfully!")
+        await asyncio.sleep(1)
         
-        # Send the key as a separate message with formatting
-        formatted_key_message = f"🔑 *YOUR WORMGPT ACCESS KEY*\n\n" \
-                              f"`{key}`\n\n" \
-                              f"⏳ *Valid until:* {expiry_time}\n\n" \
-                              f"_This key provides 24-hour access to WormGPT._\n" \
-                              f"_Visit wormgpt.example.com and enter this key to start._"
+        # Send formatted key message
+        key_message = f"🔑 *YOUR WORMGPT ACCESS KEY*\n\n" \
+                     f"`{key}`\n\n" \
+                     f"⏳ *Valid until:* {expiry_time}\n\n" \
+                     f"_Use this key at wormgpt.example.com_"
         
         await update.callback_query.message.reply_text(
-            formatted_key_message,
+            key_message,
             parse_mode=ParseMode.MARKDOWN
         )
         
-        # Rest of the function...
+        # Show instructions
+        keyboard = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🌐 Copy Key", callback_data=f"copy_key_{key}")],
+            [InlineKeyboardButton("💎 Get Lifetime Access", callback_data="lifetime_key")],
+            [InlineKeyboardButton("◀️ Back", callback_data="back_to_wormgpt")]
+        ])
         
+        caption = "✅ *KEY GENERATED SUCCESSFULLY*\n\n" \
+                 "Your 24-hour trial key has been created.\n\n" \
+                 "📝 *How to Use:*\n" \
+                 "1. Copy your key (click Copy Key button)\n" \
+                 "2. Go to wormgpt.example.com\n" \
+                 "3. Enter your key to access WormGPT\n\n" \
+                 "_Want unlimited access? Get lifetime access!_"
+        
+        await update.callback_query.edit_message_media(
+            InputMediaPhoto(media=WORMGPT_IMAGE, caption=caption, parse_mode=ParseMode.MARKDOWN),
+            reply_markup=keyboard
+        )
+        
+        # Notify admin
+        try:
+            admin_msg = f"New key generated:\nUser: {update.callback_query.from_user.first_name}\nID: {user_id}\nKey: {key}\nExpiry: {expiry_time}"
+            await context.bot.send_message(chat_id=ADMIN_ID, text=admin_msg)
+        except Exception as e:
+            print(f"Admin notification failed: {e}")
+            
     except Exception as e:
         print(f"Error generating key: {e}")
         await loading_message.edit_text("❌ Error generating key. Please try again.")
+        await asyncio.sleep(2)
+        await loading_message.delete()
         return
+        
+    finally:
+        # Clean up loading message
+        try:
+            await loading_message.delete()
+        except:
+            pass
 
 # Function to show about page
 async def show_about_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
