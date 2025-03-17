@@ -3046,3 +3046,100 @@ pre code {
     background: rgba(13, 17, 23, 0.95) !important;
     border: 1px solid rgba(139, 0, 0, 0.2);
 }
+
+/* Verification page mobile responsiveness */
+@media (max-width: 768px) {
+    .verification-nav {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .nav-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .verification-content {
+        padding: 1rem;
+        min-height: calc(100vh - 8rem);
+    }
+
+    .verification-card {
+        max-width: 100%;
+    }
+
+    .card-content {
+        padding: 1.5rem;
+    }
+
+    .card-header {
+        margin-bottom: 1rem;
+    }
+
+    .card-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .card-description {
+        font-size: 0.9rem;
+    }
+
+    .key-input-section {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .verification-input {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .verify-button {
+        width: 100%;
+        padding: 0.75rem;
+        height: auto;
+        min-height: 44px;
+    }
+
+    .floating-particle {
+        display: none; /* Hide particles on mobile for better performance */
+    }
+
+    .logo-wrapper {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .logo-text {
+        font-size: 1.2rem;
+    }
+
+    .nav-button {
+        padding: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .success-message, .error-message {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Add smooth transition for orientation changes */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    .verification-content {
+        min-height: auto;
+        padding: 1rem;
+    }
+
+    .verification-nav {
+        position: sticky;
+        top: 0;
+        background: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+}
