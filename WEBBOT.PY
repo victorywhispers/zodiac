@@ -24,14 +24,14 @@ def health():
     return {'status': 'alive'}
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Send a message with the Flash 2.0 web app button."""
+    """Send a message with the web app button."""
     keyboard = [[InlineKeyboardButton(
         "🤖 Open Flash 2.0", 
         web_app=WebAppInfo(url=WEBAPP_URL)
     )]]
 
     await update.message.reply_text(
-        "Welcome! Click the button below to start using Flash 2.0:",
+        "Welcome! Click the button below to open Flash 2.0:",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
