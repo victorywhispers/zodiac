@@ -28,7 +28,7 @@ WORMGPT_IMAGE = "https://i.imgur.com/Bcthuqf.jpeg"  # Replace with direct image 
 LIFETIME_KEY_IMAGE = "https://i.imgur.com/JW9CnYF.jpeg"  # Replace with direct image URL
 
 # User data storage file
-USER_DATA_FILE = "user_data.json"
+USER_DATA_FILE = os.path.join(os.path.dirname(__file__), 'user_data.json')
 
 # Create or load user data
 if os.path.exists(USER_DATA_FILE):
@@ -39,12 +39,22 @@ else:
 
 # Function to save user data
 def save_user_data():
-    with open(USER_DATA_FILE, 'w') as f:
-        json.dump(user_data, f)
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+        
+        # Save with proper formatting and error handling
+        with open(USER_DATA_FILE, 'w') as f:
+            json.dump(user_data, f, indent=2)
+        print(f"Saved user data to: {USER_DATA_FILE}")
+        print("Current user data:", json.dumps(user_data, indent=2))
+    except Exception as e:
+        print(f"Error saving user data: {e}")
 
 # Generate a random key
 def generate_key():
     key = "WR-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
+    print(f"Generated new key: {key}")
     return key
 
 # Calculate key expiry time (24 hours from now)
@@ -379,7 +389,7 @@ async def show_existing_key(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Function to handle key generation
 async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.callback_query.from_user.id
+    user_id = str(update.callback_query.from_user.id)
     user_data_entry = get_user_data(user_id)
     
     # Check channel membership before generating key
@@ -412,9 +422,27 @@ async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYP
     user_data_entry.update({
         "key": key,
         "expiry_time": expiry_time,
-        "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1
+        "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1,
+        "last_key_generated": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     })
-    save_user_data()  # This saves to user_data.json
+    
+    # Save immediately
+    save_user_data()
+    
+    # Verify key was saved
+    if not os.path.exists(USER_DATA_FILE):
+        print(f"Error: user_data.json not found at {USER_DATA_FILE}")
+        return
+        
+    # Verify key in saved data
+    with open(USER_DATA_FILE, 'r') as f:
+        saved_data = json.load(f)
+        saved_key = saved_data.get(user_id, {}).get("key")
+        if saved_key != key:
+            print(f"Key verification failed! Generated: {key}, Saved: {saved_key}")
+            return
+            
+    print(f"Key successfully generated and stored for user {user_id}: {key}")
     
     # Update loading message to show success
     await loading_message.edit_text("✅ Key generated successfully!")
@@ -686,4 +714,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
