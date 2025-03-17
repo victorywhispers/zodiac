@@ -25,32 +25,23 @@ print(f"Looking for user_data.json at: {USER_DATA_FILE}")
 
 def load_user_data():
     try:
-        print(f"\n=== Debug Info ===")
-        print(f"Current working directory: {os.getcwd()}")
-        print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
+        # Use project directory path
+        base_dir = '/opt/render/project/src'
+        file_path = os.path.join(base_dir, 'user_data.json')
+        print(f"Looking for file at: {file_path}")
         
-        if os.path.exists(USER_DATA_FILE):
-            try:
-                with open(USER_DATA_FILE, 'r') as f:
-                    data = json.load(f)
-                print(f"Successfully loaded data from: {USER_DATA_FILE}")
-                return data
-            except Exception as e:
-                print(f"Warning: Could not read {USER_DATA_FILE}: {e}")
-        
-        # Fallback to project root
-        root_file = os.path.join(os.getcwd(), '..', 'user_data.json')
-        if os.path.exists(root_file):
-            try:
-                with open(root_file, 'r') as f:
-                    data = json.load(f)
-                print(f"Successfully loaded data from: {root_file}")
-                return data
-            except Exception as e:
-                print(f"Warning: Could not read {root_file}: {e}")
-        
-        print("No readable user_data.json found")
-        return {}
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            print(f"Successfully loaded data from: {file_path}")
+            return data
+        else:
+            print(f"File not found at {file_path}, creating new data")
+            data = {}
+            # Create file with empty data
+            with open(file_path, 'w') as f:
+                json.dump(data, f)
+            return data
             
     except Exception as e:
         print(f"Error in load_user_data: {str(e)}")
