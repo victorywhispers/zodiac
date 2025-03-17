@@ -11,21 +11,8 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
-# Add these new imports
-from aiohttp import web
-import logging
-
-# Configure logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-
-# Get port from environment variable
-PORT = int(os.environ.get('PORT', 8080))
-
 # Bot configuration
-BOT_TOKEN = "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"  # Replace with your bot token
+BOT_TOKEN = "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
@@ -41,7 +28,7 @@ WORMGPT_IMAGE = "https://i.imgur.com/Bcthuqf.jpeg"  # Replace with direct image 
 LIFETIME_KEY_IMAGE = "https://i.imgur.com/JW9CnYF.jpeg"  # Replace with direct image URL
 
 # User data storage file
-USER_DATA_FILE = os.getenv('USER_DATA_FILE', 'user_data.json')
+USER_DATA_FILE = "user_data.json"
 
 # Create or load user data
 if os.path.exists(USER_DATA_FILE):
@@ -52,22 +39,8 @@ else:
 
 # Function to save user data
 def save_user_data():
-    try:
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
-        
-        # Save with proper permissions
-        with open(USER_DATA_FILE, 'w') as f:
-            json.dump(user_data, f, indent=2)
-        
-        # Set file permissions to be readable by both services
-        os.chmod(USER_DATA_FILE, 0o666)
-        
-        print(f"Data saved successfully to {USER_DATA_FILE}")
-        return True
-    except Exception as e:
-        print(f"Error saving user data: {e}")
-        return False
+    with open(USER_DATA_FILE, 'w') as f:
+        json.dump(user_data, f)
 
 # Generate a random key
 def generate_key():
@@ -409,7 +382,7 @@ async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYP
     user_id = update.callback_query.from_user.id
     user_data_entry = get_user_data(user_id)
     
-    # Check channel membership first
+    # Check channel membership before generating key
     in_channel = await check_channel_membership(context.bot, user_id)
     if not in_channel:
         user_data_entry["verified"] = False
@@ -417,84 +390,76 @@ async def generate_key_process(update: Update, context: ContextTypes.DEFAULT_TYP
         await show_verification_page(update, context)
         return
     
-    # Show initial loading message
-    loading_message = await update.callback_query.message.reply_text("🔄 Initializing key generation...")
+    # Check if user already has a valid key
+    if user_data_entry["key"] and not is_key_expired(user_data_entry["expiry_time"]):
+        await show_existing_key(update, context)
+        return
     
+    # Show loading message
+    loading_message = await update.callback_query.message.reply_text("🔄 Generating your key...")
+    
+    # Simulate loading with animation
+    loading_frames = ["⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"]
+    for i in range(10):
+        await loading_message.edit_text(f"🔄 Generating your unique key... {loading_frames[i % len(loading_frames)]}")
+        await asyncio.sleep(0.3)
+    
+    # Generate the key
+    key = generate_key()
+    expiry_time = get_expiry_time()
+    
+    # Store the key and expiry time in a format compatible with web app
+    user_data_entry.update({
+        "key": key,
+        "expiry_time": expiry_time,
+        "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1
+    })
+    save_user_data()  # This saves to user_data.json
+    
+    # Update loading message to show success
+    await loading_message.edit_text("✅ Key generated successfully!")
+    
+    # Send the key as a separate message with formatting
+    formatted_key_message = f"🔑 *YOUR WORMGPT ACCESS KEY*\n\n" \
+                           f"`{key}`\n\n" \
+                           f"⏳ *Valid until:* {expiry_time}\n\n" \
+                           f"_This key provides 24-hour access to WormGPT._\n" \
+                           f"_Visit wormgpt.example.com and enter this key to start._"
+    
+    await update.callback_query.message.reply_text(
+        formatted_key_message,
+        parse_mode=ParseMode.MARKDOWN
+    )
+    
+    # Delete the loading message after a delay
+    await asyncio.sleep(2)
+    await loading_message.delete()
+    
+    # Show confirmation page
+    keyboard = InlineKeyboardMarkup([
+        [InlineKeyboardButton("💎 Upgrade to Lifetime", callback_data="lifetime_key")],
+        [InlineKeyboardButton("◀️ Back to Menu", callback_data="back_to_home")]
+    ])
+    
+    caption = "✅ *KEY GENERATED SUCCESSFULLY*\n\n" \
+              "Your WormGPT trial key has been created and is valid for 24 hours.\n\n" \
+              "📝 *Instructions:*\n" \
+              "1. Copy your key from the message above\n" \
+              "2. Visit wormgpt.example.com\n" \
+              "3. Enter your key to access the service\n\n" \
+              "Want unlimited access? Upgrade to our lifetime plan!"
+    
+    await update.callback_query.edit_message_media(
+        InputMediaPhoto(media=WORMGPT_IMAGE, caption=caption, parse_mode=ParseMode.MARKDOWN),
+        reply_markup=keyboard
+    )
+    
+    # Notify admin about key generation
     try:
-        # Generate key
-        key = "WR-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
-        expiry_time = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Update user data
-        user_data_entry.update({
-            "key": key,
-            "expiry_time": expiry_time,
-            "total_keys_generated": user_data_entry.get("total_keys_generated", 0) + 1
-        })
-        
-        # Save data with proper error handling
-        if not os.path.exists(os.path.dirname(USER_DATA_FILE)):
-            os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
-        
-        with open(USER_DATA_FILE, 'w') as f:
-            json.dump(user_data, f, indent=2, default=str)
-            
-        # Send key message immediately
-        key_message = await update.callback_query.message.reply_text(
-            f"🔑 *YOUR WORMGPT ACCESS KEY*\n\n"
-            f"`{key}`\n\n"
-            f"⏳ *Valid until:* {expiry_time}\n\n"
-            f"_Use this key at wormgpt.example.com_",
-            parse_mode=ParseMode.MARKDOWN
-        )
-        
-        # Show success interface
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("📋 Copy Key", callback_data=f"copy_key_{key}")],
-            [InlineKeyboardButton("💎 Get Lifetime Access", callback_data="lifetime_key")],
-            [InlineKeyboardButton("◀️ Back", callback_data="back_to_wormgpt")]
-        ])
-        
-        await update.callback_query.edit_message_media(
-            InputMediaPhoto(
-                media=WORMGPT_IMAGE,
-                caption="✅ *KEY GENERATED SUCCESSFULLY*\n\n"
-                        "Your 24-hour trial key has been created.\n\n"
-                        "📝 *How to Use:*\n"
-                        "1. Copy your key above\n"
-                        "2. Go to wormgpt.example.com\n"
-                        "3. Enter your key to access WormGPT",
-                parse_mode=ParseMode.MARKDOWN
-            ),
-            reply_markup=keyboard
-        )
-        
-        # Notify admin
-        try:
-            admin_msg = (
-                f"New key generated:\n"
-                f"User: {update.callback_query.from_user.first_name}\n"
-                f"ID: {user_id}\n"
-                f"Key: {key}\n"
-                f"Expiry: {expiry_time}"
-            )
-            await context.bot.send_message(chat_id=ADMIN_ID, text=admin_msg)
-        except Exception as e:
-            print(f"Admin notification failed: {e}")
-            
-    except Exception as e:
-        print(f"Error in key generation: {str(e)}")
-        await loading_message.edit_text(
-            "❌ Error generating key. Please try again or contact support."
-        )
-        await asyncio.sleep(2)
-        
-    finally:
-        # Clean up loading message
-        try:
-            await loading_message.delete()
-        except:
-            pass
+        admin_message = f"New key generated:\nUser: {update.callback_query.from_user.first_name} {update.callback_query.from_user.last_name if update.callback_query.from_user.last_name else ''}\nUsername: @{update.callback_query.from_user.username if update.callback_query.from_user.username else 'None'}\nUser ID: {user_id}\nKey: {key}\nExpiry: {expiry_time}"
+        await context.bot.send_message(chat_id=ADMIN_ID, text=admin_message)
+    except:
+        pass  # Silently fail if admin notification fails
 
 # Function to show about page
 async def show_about_page(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -706,8 +671,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Redirect users to the menu when they send text messages
     await start_command(update, context)
 
-async def web_app():
-    # Create the bot application
+def main():
+    # Create the Application
     application = Application.builder().token(BOT_TOKEN).build()
     
     # Add handlers
@@ -715,19 +680,9 @@ async def web_app():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Start polling in background
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
-    
-    # Create web app
-    app = web.Application()
-    app.router.add_get('/health', lambda r: web.Response(text='alive'))
-    
-    return app
-
-def main():
-    web.run_app(web_app(), port=PORT)
+    # Start the Bot
+    print("Bot is running...")
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
