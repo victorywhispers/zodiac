@@ -30,28 +30,36 @@ def load_user_data():
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
         print(f"File exists: {os.path.exists(USER_DATA_FILE)}")
         
-        # If file doesn't exist in /data, try to copy from project root
-        if not os.path.exists(USER_DATA_FILE):
-            root_file = os.path.join(os.getcwd(), '..', 'user_data.json')
-            if os.path.exists(root_file):
-                os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
-                with open(root_file, 'r') as src, open(USER_DATA_FILE, 'w') as dst:
-                    dst.write(src.read())
-                print(f"Copied user_data.json from {root_file} to {USER_DATA_FILE}")
+        # Try multiple locations for the file
+        possible_paths = [
+            USER_DATA_FILE,  # /data/user_data.json
+            os.path.join(os.getcwd(), '..', 'user_data.json'),  # Project root
+            os.path.join(os.getcwd(), 'user_data.json')  # API directory
+        ]
         
-        if os.path.exists(USER_DATA_FILE):
-            with open(USER_DATA_FILE, 'r') as f:
-                data = json.load(f)
-                print("\nLoaded user data:")
-                print(json.dumps(data, indent=2))
+        # Find first existing file
+        for path in possible_paths:
+            if os.path.exists(path):
+                print(f"Found user_data.json at: {path}")
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                
+                # If file isn't in the right place, copy it
+                if path != USER_DATA_FILE:
+                    print(f"Copying file to correct location: {USER_DATA_FILE}")
+                    os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+                    with open(USER_DATA_FILE, 'w') as f:
+                        json.dump(data, f, indent=2)
+                    
                 return data
-        else:
-            print(f"user_data.json not found at: {USER_DATA_FILE}")
-            return {}
+                
+        print("No user_data.json found in any location")
+        return {}
             
     except Exception as e:
         print(f"Error loading user data: {str(e)}")
         print(f"File permissions: {oct(os.stat(USER_DATA_FILE).st_mode)[-3:] if os.path.exists(USER_DATA_FILE) else 'N/A'}")
+        print(f"Directory contents: {os.listdir(os.path.dirname(USER_DATA_FILE)) if os.path.exists(os.path.dirname(USER_DATA_FILE)) else 'N/A'}")
         return {}
 
 @app.route('/')
@@ -167,4 +175,11 @@ def system_check():
         }), 500
 
 if __name__ == '__main__':
+    # Ensure data directory exists
+    os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+    
+    # Check if we can write to the data directory
+    if not os.access(os.path.dirname(USER_DATA_FILE), os.W_OK):
+        print(f"Warning: Cannot write to {os.path.dirname(USER_DATA_FILE)}")
+    
     app.run(debug=True, port=5000)
