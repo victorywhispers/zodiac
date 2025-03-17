@@ -128,7 +128,18 @@ def validate_key():
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({'status': 'alive'})
+    try:
+        # Test database access
+        user_data = load_user_data()
+        return jsonify({
+            'status': 'alive',
+            'database': 'connected' if user_data is not None else 'error'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
