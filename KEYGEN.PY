@@ -25,7 +25,7 @@ logging.basicConfig(
 PORT = int(os.environ.get('PORT', 8080))
 
 # Bot configuration
-BOT_TOKEN = "7693246799:AAF30PjRnkpRDowNL58IDrRdW7ALs2VLTGA"  # Replace with your bot token
+BOT_TOKEN = "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
@@ -53,17 +53,19 @@ else:
 # Function to save user data
 def save_user_data():
     try:
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+        data_dir = '/data'
+        file_path = os.path.join(data_dir, 'user_data.json')
         
-        # Save with proper permissions
-        with open(USER_DATA_FILE, 'w') as f:
+        # Ensure directory exists
+        os.makedirs(data_dir, exist_ok=True)
+        
+        # Save data
+        with open(file_path, 'w') as f:
             json.dump(user_data, f, indent=2)
         
-        # Set file permissions to be readable by both services
-        os.chmod(USER_DATA_FILE, 0o666)
-        
-        print(f"Data saved successfully to {USER_DATA_FILE}")
+        # Set permissions
+        os.chmod(file_path, 0o666)
+        print(f"Data saved successfully to {file_path}")
         return True
     except Exception as e:
         print(f"Error saving user data: {e}")
