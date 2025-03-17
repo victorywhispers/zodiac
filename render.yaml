@@ -26,16 +26,14 @@ services:
       mkdir -p /data
       cp user_data.json /data/user_data.json || echo "No initial user_data.json"
       chmod 666 /data/user_data.json || true
-    startCommand: cd api && gunicorn server:app --timeout 120 --keep-alive 65 --workers 2
-    healthCheckPath: /health
-    healthCheckTimeout: 60
+    startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
         value: /data/user_data.json
 
-  # Key Generator Service
+  # Telegram Bot Service
   - type: web
-    name: wormgpt-keygen  
+    name: wormgpt-keygen
     env: python
     disk:
       name: wormgpt-data
@@ -44,13 +42,17 @@ services:
       python -m pip install --upgrade pip
       pip install -r keygen_requirements.txt
       mkdir -p /data
-    startCommand: gunicorn -b 0.0.0.0:$PORT -w 1 --timeout 0 KEYGEN:web_app
+    startCommand: python KEYGEN.PY
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: BOT_TOKEN
+        value: "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"
+      - key: CHANNEL_USERNAME
+        value: "hecabruss"
+      - key: CHANNEL_LINK
+        value: "https://t.me/hecabruss"
       - key: USER_DATA_FILE
         value: /data/user_data.json
-      - key: BOT_TOKEN 
-        value: "7787758054:AAH1va0pP1USZ10HlTofCQSTkn33k2h68Mw"
       - key: PORT
-        value: "10000"
-    healthCheckPath: /health
-    healthCheckTimeout: 60
+        value: 8080
