@@ -33,7 +33,7 @@ services:
       - key: USER_DATA_FILE
         value: /data/user_data.json
 
-  # Telegram Bot Service
+  # Existing Key Generator Service
   - type: web
     name: wormgpt-keygen
     env: python
@@ -48,3 +48,20 @@ services:
     envVars:
       - key: USER_DATA_FILE
         value: /data/user_data.json
+
+  # New Web Bot Service
+  - type: web
+    name: wormgpt-webbot
+    env: python
+    disk:
+      name: wormgpt-data
+      mountPath: /data
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install -r requirements.txt
+    startCommand: python WEBBOT.PY
+    envVars:
+      - key: BOT_TOKEN
+        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
+      - key: WEBAPP_URL 
+        value: "https://wormgpt-frontend.onrender.com"
