@@ -29,21 +29,29 @@ def load_user_data():
         print(f"Current working directory: {os.getcwd()}")
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
         print(f"File exists: {os.path.exists(USER_DATA_FILE)}")
-        print(f"File size: {os.path.getsize(USER_DATA_FILE)}")
-        print(f"Last modified: {datetime.datetime.fromtimestamp(os.path.getmtime(USER_DATA_FILE))}")
         
+        # If file doesn't exist in /data, try to copy from project root
         if not os.path.exists(USER_DATA_FILE):
+            root_file = os.path.join(os.getcwd(), '..', 'user_data.json')
+            if os.path.exists(root_file):
+                os.makedirs(os.path.dirname(USER_DATA_FILE), exist_ok=True)
+                with open(root_file, 'r') as src, open(USER_DATA_FILE, 'w') as dst:
+                    dst.write(src.read())
+                print(f"Copied user_data.json from {root_file} to {USER_DATA_FILE}")
+        
+        if os.path.exists(USER_DATA_FILE):
+            with open(USER_DATA_FILE, 'r') as f:
+                data = json.load(f)
+                print("\nLoaded user data:")
+                print(json.dumps(data, indent=2))
+                return data
+        else:
             print(f"user_data.json not found at: {USER_DATA_FILE}")
             return {}
             
-        with open(USER_DATA_FILE, 'r') as f:
-            data = json.load(f)
-            print("\nLoaded user data:")
-            print(json.dumps(data, indent=2))
-            return data
     except Exception as e:
         print(f"Error loading user data: {str(e)}")
-        print(f"File permissions: {oct(os.stat(USER_DATA_FILE).st_mode)[-3:]}")
+        print(f"File permissions: {oct(os.stat(USER_DATA_FILE).st_mode)[-3:] if os.path.exists(USER_DATA_FILE) else 'N/A'}")
         return {}
 
 @app.route('/')
