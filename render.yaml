@@ -71,3 +71,19 @@ services:
     scaling:
       minInstances: 1
       maxInstances: 1
+
+  # Telegram Bot Service
+  - type: web
+    name: wormgpt-telegram
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python WEBBOT.PY
+    envVars:
+      - key: BOT_TOKEN
+        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
+      - key: WEBAPP_URL
+        value: "https://wormgpt-frontend.onrender.com"
+      - key: PORT
+        value: "10000"
+    healthCheckPath: /health
+    healthCheckTimeout: 60
