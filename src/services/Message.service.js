@@ -10,20 +10,26 @@ import { ErrorService } from './Error.service.js';
 export async function insertMessage(sender, msg, selectedPersonalityTitle = null, netStream = null, db = null) {
     const newMessage = document.createElement("div");
     newMessage.classList.add("message");
+    const messageContainer = document.querySelector(".message-container");
+    messageContainer.append(newMessage);
+
     if (sender !== "user") {
         newMessage.classList.add("message-model");
         const messageRole = selectedPersonalityTitle;
         newMessage.innerHTML = `
             <div class="message-header">
-                <div class="chat-message-avatar">
-                    <div class="typing-indicator"></div>
-                </div>
                 <h3 class="message-role">${messageRole}</h3>
                 <button class="btn-refresh btn-textual material-symbols-outlined">refresh</button>
             </div>
             <div class="message-role-api" style="display: none;">${sender}</div>
             <div class="message-text"></div>
         `;
+        if (!netStream && msg) {
+            const messageText = newMessage.querySelector('.message-text');
+            messageText.innerHTML = marked.parse(msg);
+            helpers.addCopyButtons(); // Add copy buttons after parsing markdown
+        }
+        return newMessage;
     } else {
         const messageRole = "You:";
         newMessage.innerHTML = `
@@ -34,48 +40,27 @@ export async function insertMessage(sender, msg, selectedPersonalityTitle = null
             <div class="message-text">${helpers.getDecoded(msg)}</div>
         `;
     }
-
-    // Add streaming text animation
-    if (netStream && msg) {
-        const messageText = newMessage.querySelector('.message-text');
-        await streamText(messageText, msg);
-    } else if (!netStream && msg) {
-        const messageText = newMessage.querySelector('.message-text');
-        messageText.innerHTML = marked.parse(msg);
-    }
-
-    const messageContainer = document.querySelector(".message-container");
-    messageContainer.append(newMessage);
-    helpers.messageContainerScrollToBottom();
     return newMessage;
 }
 
-// Add new function for text streaming
-async function streamText(element, text) {
-    const parsedContent = marked.parse(text);
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = parsedContent;
-    const textContent = tempDiv.textContent;
-    
-    let currentText = '';
-    element.innerHTML = '';
-    
-    // Show typing indicator
-    const typingIndicator = element.closest('.message').querySelector('.typing-indicator');
-    if (typingIndicator) typingIndicator.style.display = 'block';
-    
-    // Add random delays between characters
-    for (let i = 0; i < textContent.length; i++) {
-        currentText += textContent[i];
-        element.innerHTML = marked.parse(currentText);
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 30 + 10));
+export async function regenerate(responseElement, db) { // Add db parameter
+    try {
+        // Get the user's message that generated this response
+        const message = responseElement.previousElementSibling.querySelector(".message-text").textContent;
+        const elementIndex = [...responseElement.parentElement.children].indexOf(responseElement);
+        const chat = await chatsService.getCurrentChat(db); // Pass db here
+
+        // Remove messages after the one we're regenerating
+        chat.content = chat.content.slice(0, elementIndex - 1);
+        await db.chats.put(chat);
+        
+        // Reload chat and generate new response
+        await chatsService.loadChat(chat.id, db); // Pass db here
+        await send(message, db); // Pass db here
+    } catch (error) {
+        console.error('Error regenerating message:', error);
+        throw error;
     }
-    
-    // Hide typing indicator when done
-    if (typingIndicator) typingIndicator.style.display = 'none';
-    
-    // Set final parsed content with proper markdown
-    element.innerHTML = parsedContent;
 }
 
 export async function send(msg, db) {
