@@ -26,9 +26,7 @@ services:
       mkdir -p /data
       cp user_data.json /data/user_data.json || echo "No initial user_data.json"
       chmod 666 /data/user_data.json || true
-    startCommand: cd api && gunicorn server:app --timeout 120 --keep-alive 65 --workers 2
-    healthCheckPath: /health
-    healthCheckTimeout: 60
+    startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
         value: /data/user_data.json
