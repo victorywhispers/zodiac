@@ -35,7 +35,7 @@ export class VerificationPage {
                                 alt="WormGPT Logo" 
                                 class="logo-image">
                         </div>
-                        <span class="logo-text">WormGPT</span>
+                        <span class="logo-text"></span>
                     </div>
                     <div class="nav-buttons">
                         <button class="nav-button" data-page="privacy">
