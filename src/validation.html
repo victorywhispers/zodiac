@@ -1,0 +1,84 @@
+.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WormGPT Validation</title>
+    <link rel="shortcut icon" href="https://upload.wikimedia.org/wikipedia/commons/4/4a/Wormgpt.svg" type="image/x-icon">
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+    <div class="verification-overlay">
+        <div class="verification-background">
+            <div class="gradient-overlay"></div>
+            <div id="particles-container"></div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="verification-nav">
+            <div class="logo-section">
+                <div class="logo-wrapper">
+                    <div class="logo-glow"></div>
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Wormgpt.svg" 
+                        alt="WormGPT Logo" 
+                        class="logo-image">
+                </div>
+                <span class="logo-text">WormGPT</span>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-button" id="privacyBtn">
+                    <span class="material-symbols-outlined">shield</span>
+                    <span>Privacy</span>
+                </button>
+                <button class="nav-button" id="termsBtn">
+                    <span class="material-symbols-outlined">description</span>
+                    <span>Terms</span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="verification-content">
+            <div class="verification-card">
+                <div class="glow-effect"></div>
+                <div class="card-content">
+                    <div class="card-header">
+                        <span class="material-symbols-outlined">vpn_key</span>
+                        <h2>Verify Your Access</h2>
+                    </div>
+                    <p class="card-description">Enter your WormGPT access key to continue</p>
+                    <div class="key-input-section">
+                        <input type="text" 
+                            id="verificationKeyInput" 
+                            placeholder="Enter your key (e.g., WR-XXXXXXXXXX)"
+                            class="verification-input"
+                        >
+                        <button id="verifyKeyBtn" class="verify-button verify">
+                            <span class="material-symbols-outlined">check_circle</span>
+                            Verify
+                        </button>
+                    </div>
+                    <div id="verificationStatus" class="verification-status"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Generate floating particles
+        const particlesContainer = document.getElementById('particles-container');
+        for(let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'floating-particle';
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            particle.style.animationDuration = `${5 + Math.random() * 5}s`;
+            particlesContainer.appendChild(particle);
+        }
+    </script>
+    <script type="module" src="./validation.js"></script>
+</body>
+</html>
