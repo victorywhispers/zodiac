@@ -33,7 +33,7 @@ services:
       - key: USER_DATA_FILE
         value: /data/user_data.json
 
-  # Existing Key Generator Service
+  # Key Generator Service
   - type: web
     name: wormgpt-keygen
     env: python
@@ -49,31 +49,15 @@ services:
       - key: USER_DATA_FILE
         value: /data/user_data.json
 
-  # Web Bot Service
+  # Telegram Bot Service (Single service instead of two)
   - type: web
-    name: wormgpt-webbot
+    name: wormgpt-telegram
     env: python
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-    startCommand: gunicorn WEBBOT:app --bind 0.0.0.0:$PORT --worker-class sync --workers 1 --threads 8 --timeout 0
+    startCommand: python WEBBOT.PY  # Direct Python execution instead of gunicorn
     autoDeploy: true
-    envVars:
-      - key: BOT_TOKEN
-        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
-      - key: WEBAPP_URL
-        value: "https://wormgpt-frontend.onrender.com"
-      - key: PORT
-        value: "10000"
-    healthCheckPath: /health
-    healthCheckTimeout: 60
-
-  # Telegram Bot Service
-  - type: web
-    name: wormgpt-telegram
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python WEBBOT.PY
     envVars:
       - key: BOT_TOKEN
         value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
