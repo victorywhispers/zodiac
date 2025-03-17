@@ -40,18 +40,9 @@ services:
   # Backend API
   - type: web
     name: wormgpt-api
-    disk:
-      name: shared-data
-      mountPath: /data
     env: python
-    buildCommand: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
-      # Set up data directory with correct permissions
-      mkdir -p /data
-      cp user_data.json /data/user_data.json || echo "Failed to copy user_data.json"
-      chmod -R 777 /data
+    buildCommand: python -m pip install --upgrade pip && pip install -r requirements.txt
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
-        value: /data/user_data.json
+        value: /opt/render/project/src/user_data.json
