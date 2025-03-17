@@ -706,16 +706,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Redirect users to the menu when they send text messages
     await start_command(update, context)
 
-async def web_server():
-    app = web.Application()
-    runner = web.AppRunner(app)
-    await runner.setup()
-    site = web.TCPSite(runner, '0.0.0.0', PORT)
-    await site.start()
-    logging.info(f"Web server started on port {PORT}")
-
-def main():
-    # Create the Application
+async def web_app():
+    # Create the bot application
     application = Application.builder().token(BOT_TOKEN).build()
     
     # Add handlers
@@ -723,15 +715,19 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Start application with polling in a way that prevents multiple instances
-    application.run_polling(
-        allowed_updates=Update.ALL_TYPES,
-        drop_pending_updates=True,
-        close_loop=False,
-        stop_signals=None  # Prevent stopping on signals
-    )
+    # Start polling in background
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling(allowed_updates=Update.ALL_TYPES)
+    
+    # Create web app
+    app = web.Application()
+    app.router.add_get('/health', lambda r: web.Response(text='alive'))
+    
+    return app
 
-    print("Bot is running...")
+def main():
+    web.run_app(web_app(), port=PORT)
 
 if __name__ == "__main__":
     main()
