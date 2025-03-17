@@ -53,24 +53,20 @@ services:
   - type: web
     name: wormgpt-webbot
     env: python
-    disk:
-      name: wormgpt-data
-      mountPath: /data
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-    startCommand: gunicorn --workers 2 --timeout 120 --keep-alive 65 WEBBOT:app
+    startCommand: python WEBBOT.PY
     autoDeploy: true
     healthCheckPath: /health
     healthCheckTimeout: 60
     envVars:
       - key: BOT_TOKEN
-        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
-      - key: WEBAPP_URL 
+        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs" 
+      - key: WEBAPP_URL
         value: "https://wormgpt-frontend.onrender.com"
-    scaling:
-      minInstances: 1
-      maxInstances: 1
+      - key: PORT
+        value: "10000"
 
   # Telegram Bot Service
   - type: web
