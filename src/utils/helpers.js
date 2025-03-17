@@ -78,3 +78,38 @@ export function messageContainerScrollToBottom(){
         top: container.scrollHeight
     });
 }
+
+export function addCopyButtons() {
+    // Find all code blocks
+    const codeBlocks = document.querySelectorAll('pre code');
+    
+    codeBlocks.forEach(code => {
+        // Create wrapper div
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper';
+        
+        // Create copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'copy-code-button';
+        copyButton.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
+        
+        // Add click handler
+        copyButton.addEventListener('click', async () => {
+            const text = code.textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+                copyButton.innerHTML = '<span class="material-symbols-outlined">check</span>';
+                setTimeout(() => {
+                    copyButton.innerHTML = '<span class="material-symbols-outlined">content_copy</span>';
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy code:', err);
+            }
+        });
+        
+        // Wrap the code block
+        code.parentNode.insertBefore(wrapper, code);
+        wrapper.appendChild(code);
+        wrapper.appendChild(copyButton);
+    });
+}
