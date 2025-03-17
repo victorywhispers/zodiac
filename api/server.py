@@ -29,41 +29,19 @@ def load_user_data():
         print(f"Current working directory: {os.getcwd()}")
         print(f"USER_DATA_FILE path: {USER_DATA_FILE}")
         
-        # Try to fix permissions
-        data_dir = os.path.dirname(USER_DATA_FILE)
-        if not os.path.exists(data_dir):
-            os.makedirs(data_dir, mode=0o777, exist_ok=True)
-            print(f"Created directory: {data_dir}")
-            
-        if os.path.exists(USER_DATA_FILE):
-            os.chmod(USER_DATA_FILE, 0o666)
-            print(f"Updated permissions for: {USER_DATA_FILE}")
-        
+        # Try multiple locations
         possible_paths = [
             USER_DATA_FILE,  # /data/user_data.json
             os.path.join(os.getcwd(), '..', 'user_data.json'),  # Project root
             os.path.join(os.getcwd(), 'user_data.json')  # API directory
         ]
         
-        # Find first readable file
         for path in possible_paths:
-            if os.path.exists(path):
+            if os.path.exists(path) and os.access(path, os.R_OK):
                 try:
                     with open(path, 'r') as f:
                         data = json.load(f)
                     print(f"Successfully loaded data from: {path}")
-                    
-                    # If not in preferred location, try to copy
-                    if path != USER_DATA_FILE:
-                        try:
-                            os.makedirs(data_dir, mode=0o777, exist_ok=True)
-                            with open(USER_DATA_FILE, 'w') as f:
-                                json.dump(data, f, indent=2)
-                            os.chmod(USER_DATA_FILE, 0o666)
-                            print(f"Copied data to preferred location: {USER_DATA_FILE}")
-                        except Exception as e:
-                            print(f"Warning: Could not copy to preferred location: {e}")
-                            
                     return data
                 except Exception as e:
                     print(f"Warning: Could not read {path}: {e}")
@@ -74,7 +52,6 @@ def load_user_data():
             
     except Exception as e:
         print(f"Error in load_user_data: {str(e)}")
-        print(f"File permissions: {oct(os.stat(USER_DATA_FILE).st_mode)[-3:] if os.path.exists(USER_DATA_FILE) else 'N/A'}")
         return {}
 
 @app.route('/')
