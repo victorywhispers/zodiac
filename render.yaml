@@ -56,17 +56,17 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-    startCommand: python WEBBOT.PY
+    startCommand: gunicorn WEBBOT:app --bind 0.0.0.0:$PORT --worker-class sync --workers 1 --threads 8 --timeout 0
     autoDeploy: true
-    healthCheckPath: /health
-    healthCheckTimeout: 60
     envVars:
       - key: BOT_TOKEN
-        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs" 
+        value: "7909216903:AAGJXAo1nWT0Wqs6ohOdNaWwtejUEKcHtZs"
       - key: WEBAPP_URL
         value: "https://wormgpt-frontend.onrender.com"
       - key: PORT
         value: "10000"
+    healthCheckPath: /health
+    healthCheckTimeout: 60
 
   # Telegram Bot Service
   - type: web
