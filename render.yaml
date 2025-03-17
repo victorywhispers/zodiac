@@ -16,10 +16,10 @@ services:
   # Backend API
   - type: web
     name: wormgpt-api
-    env: python
     disk:
       name: wormgpt-data
       mountPath: /data
+    env: python
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
@@ -36,10 +36,10 @@ services:
   # Telegram Bot Service
   - type: web
     name: wormgpt-keygen
-    env: python
     disk:
       name: wormgpt-data
       mountPath: /data
+    env: python
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r keygen_requirements.txt
