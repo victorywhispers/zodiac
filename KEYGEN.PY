@@ -12,7 +12,7 @@ from telegram.constants import ParseMode
 from telegram.error import BadRequest
 
 # Bot configuration
-BOT_TOKEN = "7787758054:AAGYh_NE_3pWp5VgQggbHS0U2VaVu-ZzPuU"  # Replace with your bot token
+BOT_TOKEN = "8149610025:AAF-vNIJOMBeJHJpPZmfR6SW7k3Jmy3dJbY"  # Replace with your bot token
 
 # Channel to be joined for verification
 CHANNEL_USERNAME = "hecabruss"
