@@ -49,10 +49,14 @@ services:
     buildCommand: |
       python -m pip install --upgrade pip
       pip install -r requirements.txt
-      mkdir -p /data
-      cp ./user_data.json /data/user_data.json || echo "Failed to copy user_data.json"
-      chmod -R 777 /data
-      ls -la /data  # Debug file presence
+      # Create data directory and set permissions
+      sudo mkdir -p /data
+      sudo chown -R 1000:1000 /data
+      sudo chmod -R 777 /data
+      # Copy user data file
+      cp user_data.json /data/user_data.json || echo "Failed to copy user_data.json"
+      # Debug output
+      ls -la /data
     startCommand: cd api && gunicorn server:app
     envVars:
       - key: USER_DATA_FILE
