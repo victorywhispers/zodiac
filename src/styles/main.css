@@ -2806,7 +2806,7 @@ textarea:focus {
     background: rgba(17, 17, 17, 0.95);
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 1rem;
-    padding: 2.5rem;
+    padding: 2rem;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
@@ -2832,14 +2832,13 @@ textarea:focus {
 .policy-body {
     color: #9ca3af;
     line-height: 1.6;
-    margin: 1.5rem 0;
 }
 
 .policy-body h3 {
     color: white;
     font-size: 1.25rem;
     font-weight: 600;
-    margin: 2rem 0 1rem;
+    margin: 1.5rem 0 1rem;
 }
 
 .policy-body ul {
