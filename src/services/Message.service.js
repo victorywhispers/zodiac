@@ -172,18 +172,31 @@ export async function send(msg, db) {
         try {
             const result = await chat.sendMessage(msg);
             const response = await result.response;
+            const messageElement = await insertMessage("model", "", selectedPersonality.name, null, db);
+            const messageText = messageElement.querySelector('.message-text');
+            
             const text = response.text();
-            
-            const messageElement = await insertMessage("model", text, selectedPersonality.name, true, db);
-            
-            // Save message after streaming is complete
+            messageText.innerHTML = marked.parse(text);
+            helpers.messageContainerScrollToBottom();
+
+            // Save both messages in chat history
             const currentChat = await chatsService.getCurrentChat(db);
+            if (!currentChat.content.some(m => m.role === "user" && m.parts[0].text === msg)) {
+                currentChat.content.push({ role: "user", parts: [{ text: msg }] });
+            }
             currentChat.content.push({ 
                 role: "model", 
                 personality: selectedPersonality.name, 
                 parts: [{ text: text }] 
             });
             await db.chats.put(currentChat);
+
+            const refreshBtn = messageElement.querySelector('.btn-refresh');
+            if (refreshBtn) {
+                refreshBtn.onclick = async () => {
+                    await regenerate(messageElement, db); // Pass db here
+                };
+            }
         } catch (error) {
             console.error('Error in chat response:', error);
             throw error;
