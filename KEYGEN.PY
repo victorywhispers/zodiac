@@ -723,22 +723,15 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    # Start the web server alongside the bot
+    # Start application with polling in a way that prevents multiple instances
     application.run_polling(
         allowed_updates=Update.ALL_TYPES,
         drop_pending_updates=True,
-        close_loop=False
+        close_loop=False,
+        stop_signals=None  # Prevent stopping on signals
     )
-    
-    # Start web server
-    asyncio.get_event_loop().create_task(web_server())
-    
-    # Keep the process running
+
     print("Bot is running...")
-    try:
-        asyncio.get_event_loop().run_forever()
-    except KeyboardInterrupt:
-        pass
 
 if __name__ == "__main__":
     main()
